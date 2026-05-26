@@ -602,7 +602,55 @@ textarea.journal-text {
 .modal input:focus, .modal select:focus, .modal textarea:focus {
   outline: none; border-color: var(--primary);
 }
-.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; align-items: center; }
+.btn-danger {
+  background: linear-gradient(135deg, var(--danger), #b91c1c);
+  border: none; color: white; font-weight: 600;
+  box-shadow: 0 4px 14px rgba(239,68,68,0.25);
+}
+.btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239,68,68,0.35);
+}
+.dialog-choice-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: right;
+  transition: all .15s;
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  min-height: 50px;
+}
+.dialog-choice-btn:hover {
+  border-color: var(--primary);
+  background: var(--surface);
+  transform: translateX(-3px);
+}
+.dialog-choice-btn .choice-icon {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 8px; font-size: 16px;
+  flex-shrink: 0;
+}
+.dialog-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+.dialog-input:focus { outline: none; border-color: var(--primary); }
 
 /* ─── TOAST ─── */
 .toast {
@@ -1387,7 +1435,7 @@ select.task-priority {
 <!-- ─── TIME BLOCK MODAL ─── -->
 <div class="modal-bg" id="blockModal" onclick="if(event.target===this) closeBlockModal()">
   <div class="modal">
-    <h2>בלוק זמן 📅</h2>
+    <h2 id="blockModalTitle">בלוק זמן 📅</h2>
     <div class="form-row">
       <label>פעילות</label>
       <input type="text" id="blockTitle" placeholder="עבודה עמוקה על פרויקט X">
@@ -1403,8 +1451,10 @@ select.task-priority {
       </div>
     </div>
     <div class="modal-actions">
+      <button class="btn btn-danger" id="blockDeleteBtn" onclick="deleteBlockFromModal()" style="display:none">🗑 מחק</button>
+      <div style="flex:1"></div>
       <button class="btn" onclick="closeBlockModal()">ביטול</button>
-      <button class="btn btn-primary" onclick="saveBlock()">הוסף בלוק</button>
+      <button class="btn btn-primary" id="blockSaveBtn" onclick="saveBlock()">הוסף בלוק</button>
     </div>
   </div>
 </div>
@@ -1498,6 +1548,119 @@ function toast(msg, type='') {
   setTimeout(() => t.className = 'toast', 2400);
 }
 
+/* ─── DIALOG SYSTEM — replaces browser alert/confirm/prompt with styled modals ─── */
+function _buildDialog({ title, message, body, buttons, dismissValue = null }) {
+  return new Promise(resolve => {
+    const bg = document.createElement('div');
+    bg.className = 'modal-bg show';
+    bg.innerHTML = `<div class="modal" role="dialog" aria-modal="true">
+        ${title ? `<h2>${escapeHtml(title)}</h2>` : ''}
+        ${message ? `<p style="color:var(--text-dim);margin-bottom:16px;line-height:1.6;white-space:pre-wrap">${escapeHtml(message)}</p>` : ''}
+        <div class="dialog-body"></div>
+        <div class="modal-actions"></div>
+      </div>`;
+    if (body) bg.querySelector('.dialog-body').appendChild(body);
+    const actions = bg.querySelector('.modal-actions');
+    const close = (val) => {
+      document.removeEventListener('keydown', escHandler);
+      bg.style.opacity = '0';
+      setTimeout(() => bg.remove(), 150);
+      resolve(val);
+    };
+    (buttons || []).forEach(btn => {
+      const b = document.createElement('button');
+      b.className = 'btn' + (btn.primary ? ' btn-primary' : '') + (btn.danger ? ' btn-danger' : '');
+      b.textContent = btn.text;
+      b.onclick = () => close(btn.value);
+      actions.appendChild(b);
+    });
+    bg.addEventListener('click', e => { if (e.target === bg) close(dismissValue); });
+    function escHandler(e) {
+      if (e.key === 'Escape') { e.preventDefault(); close(dismissValue); }
+      else if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA') {
+        const primary = bg.querySelector('.btn-primary, .btn-danger');
+        if (primary) { e.preventDefault(); primary.click(); }
+      }
+    }
+    document.addEventListener('keydown', escHandler);
+    document.body.appendChild(bg);
+    // focus first input or primary button
+    setTimeout(() => {
+      const input = bg.querySelector('input, textarea');
+      if (input) input.focus();
+      else bg.querySelector('.btn-primary, .btn-danger, .btn')?.focus();
+    }, 50);
+  });
+}
+
+function confirmDialog(title, message = '', opts = {}) {
+  return _buildDialog({
+    title, message,
+    buttons: [
+      { text: opts.cancelText || 'ביטול', value: false },
+      { text: opts.confirmText || 'אישור', value: true, primary: !opts.danger, danger: !!opts.danger }
+    ],
+    dismissValue: false
+  });
+}
+
+function promptDialog(title, opts = {}) {
+  const wrap = document.createElement('div');
+  if (opts.label) {
+    const l = document.createElement('label');
+    l.textContent = opts.label;
+    l.style.cssText = 'display:block;margin-bottom:6px;font-size:12px;color:var(--text-dim);font-weight:600';
+    wrap.appendChild(l);
+  }
+  const input = document.createElement(opts.multiline ? 'textarea' : 'input');
+  if (!opts.multiline) input.type = 'text';
+  if (opts.multiline) input.rows = opts.rows || 4;
+  input.className = 'dialog-input';
+  if (opts.placeholder) input.placeholder = opts.placeholder;
+  if (opts.value) input.value = opts.value;
+  if (opts.multiline) input.style.minHeight = '100px';
+  wrap.appendChild(input);
+
+  const SUBMIT = Symbol();
+  const p = _buildDialog({
+    title,
+    message: opts.message,
+    body: wrap,
+    buttons: [
+      { text: 'ביטול', value: null },
+      { text: opts.confirmText || 'שמור', value: SUBMIT, primary: true }
+    ],
+    dismissValue: null
+  });
+  return p.then(v => v === SUBMIT ? input.value.trim() : null);
+}
+
+function choiceDialog(title, message, choices) {
+  // choices: [{ text, value, icon, iconBg, danger }]
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-bottom:8px';
+  const CHOICE = Symbol();
+  let pickedIdx = -1;
+  choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'dialog-choice-btn';
+    btn.innerHTML = `${c.icon ? `<span class="choice-icon" style="background:${c.iconBg||'var(--surface)'}">${c.icon}</span>` : ''}<span>${escapeHtml(c.text)}</span>`;
+    if (c.danger) btn.style.borderColor = 'rgba(239,68,68,0.4)';
+    btn.onclick = () => {
+      pickedIdx = i;
+      const closeBtn = wrap.closest('.modal').querySelector('.modal-actions .btn');
+      closeBtn.click(); // triggers dismiss → returns null, we override below
+    };
+    wrap.appendChild(btn);
+  });
+  return _buildDialog({
+    title, message,
+    body: wrap,
+    buttons: [{ text: 'ביטול', value: null }],
+    dismissValue: null
+  }).then(() => pickedIdx >= 0 ? choices[pickedIdx].value : null);
+}
+
 /* ─── TASKS ─── */
 function renderTasks() {
   ['q1','q2','q3','q4'].forEach(q => {
@@ -1566,19 +1729,20 @@ function deleteTask(id) {
   DB.tasks = DB.tasks.filter(t => t.id !== id);
   save(); renderTasks();
 }
-function moveTaskMenu(id, event) {
+async function moveTaskMenu(id, event) {
   event && event.stopPropagation();
   const t = DB.tasks.find(t => t.id === id);
   if (!t) return;
-  const labels = { q1:'🔥 דחוף + חשוב', q2:'⭐ חשוב', q3:'⚡ דחוף', q4:'🗑 כל השאר' };
-  const choice = prompt(`העבר את "${t.text}" לרביע:\n\n1 — ${labels.q1}\n2 — ${labels.q2}\n3 — ${labels.q3}\n4 — ${labels.q4}\n\nהקלד מספר 1-4:`);
-  if (!choice) return;
-  const map = { '1':'q1', '2':'q2', '3':'q3', '4':'q4' };
-  if (map[choice.trim()]) {
-    t.q = map[choice.trim()];
-    save(); renderTasks();
-    toast('המשימה הועברה ✓', 'success');
-  }
+  const choice = await choiceDialog('העבר את המשימה', `"${t.text}"`, [
+    { text: 'דחוף + חשוב — תעשה עכשיו', value: 'q1', icon: '🔥', iconBg: 'rgba(239,68,68,0.2)' },
+    { text: 'חשוב — תזמן',                value: 'q2', icon: '⭐', iconBg: 'rgba(16,185,129,0.2)' },
+    { text: 'דחוף — האצל',                value: 'q3', icon: '⚡', iconBg: 'rgba(245,158,11,0.2)' },
+    { text: 'כל השאר — בטל או דחה',      value: 'q4', icon: '🗑', iconBg: 'rgba(138,150,177,0.2)' },
+  ]);
+  if (!choice || choice === t.q) return;
+  t.q = choice;
+  save(); renderTasks();
+  toast('המשימה הועברה ✓', 'success');
 }
 
 /* ─── QUICK ADD ─── */
@@ -1644,10 +1808,13 @@ function saveGoal() {
   renderGoals();
   toast('יעד חדש נוצר 🎯', 'success');
 }
-function deleteGoal(id) {
-  if (!confirm('למחוק את היעד?')) return;
+async function deleteGoal(id) {
+  const g = DB.goals.find(x => x.id === id);
+  const ok = await confirmDialog('למחוק את היעד?', g ? `"${g.title}"\n\nכל אבני הדרך יימחקו לצמיתות.` : '', { danger: true, confirmText: '🗑 מחק יעד' });
+  if (!ok) return;
   DB.goals = DB.goals.filter(g => g.id !== id);
   save(); renderGoals();
+  toast('היעד נמחק', 'success');
 }
 function toggleMilestone(gid, idx) {
   const g = DB.goals.find(g => g.id === gid);
@@ -1716,10 +1883,13 @@ function saveHabit() {
   closeHabitModal();
   renderHabits();
 }
-function deleteHabit(id) {
-  if (!confirm('למחוק את ההרגל?')) return;
+async function deleteHabit(id) {
+  const h = DB.habits.find(x => x.id === id);
+  const ok = await confirmDialog('למחוק את ההרגל?', h ? `"${h.emoji} ${h.name}"\n\nכל היסטוריית הסימונים תיעלם.` : '', { danger: true, confirmText: '🗑 מחק הרגל' });
+  if (!ok) return;
   DB.habits = DB.habits.filter(h => h.id !== id);
   save(); renderHabits();
+  toast('ההרגל נמחק', 'success');
 }
 function toggleHabitDay(hid, key) {
   const h = DB.habits.find(h => h.id === hid);
@@ -1827,10 +1997,12 @@ function saveJournal() {
   renderJournal();
   toast('רישום נשמר 📔', 'success');
 }
-function deleteJournal(id) {
-  if (!confirm('למחוק את הרישום?')) return;
+async function deleteJournal(id) {
+  const ok = await confirmDialog('למחוק את הרישום?', 'הפעולה לא ניתנת לביטול.', { danger: true, confirmText: '🗑 מחק' });
+  if (!ok) return;
   DB.journal = DB.journal.filter(j => j.id !== id);
   save(); renderJournal();
+  toast('הרישום נמחק', 'success');
 }
 
 /* ─── POMODORO ─── */
@@ -2006,8 +2178,11 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) tick
 window.addEventListener('focus', tick);
 window.addEventListener('pageshow', tick);
 document.querySelectorAll('.pomo-mode').forEach(m => {
-  m.onclick = () => {
-    if (pomoState.running && !confirm('הסשן הנוכחי יאופס. להמשיך?')) return;
+  m.onclick = async () => {
+    if (pomoState.running) {
+      const ok = await confirmDialog('להחליף מצב?', 'הסשן הנוכחי ייעצר ויאופס.', { confirmText: 'החלף ואפס', danger: true });
+      if (!ok) return;
+    }
     document.querySelectorAll('.pomo-mode').forEach(x => x.classList.remove('active'));
     m.classList.add('active');
     pomoState.mode = m.dataset.mode;
@@ -2159,39 +2334,68 @@ function quickBlock(h, m = 0) {
   document.getElementById('blockStart').value = minToTimeStr(startMin);
   document.getElementById('blockEnd').value = minToTimeStr(Math.min(endMin, 24*60 - 1));
   document.getElementById('blockTitle').value = '';
-  document.getElementById('blockModal').dataset.editId = '';
+  _resetBlockModalToCreate();
   document.getElementById('blockModal').classList.add('show');
   setTimeout(() => document.getElementById('blockTitle').focus(), 50);
+}
+function _resetBlockModalToCreate() {
+  const m = document.getElementById('blockModal');
+  m.dataset.editId = '';
+  m.dataset.dayKey = todayKey();
+  document.getElementById('blockModalTitle').textContent = '📅 בלוק זמן חדש';
+  document.getElementById('blockSaveBtn').textContent = 'הוסף בלוק';
+  document.getElementById('blockDeleteBtn').style.display = 'none';
 }
 
 function editBlock(dayKeyStr, id) {
   const b = (DB.timeBlocks[dayKeyStr]||[]).find(x => x.id === id);
   if (!b) return;
-  const action = prompt(`"${b.title}" (${b.start}–${b.end})\n\n1 — ערוך\n2 — מחק\n\nבחר 1 או 2 (Enter לביטול):`);
-  if (action === '2') { removeBlock(dayKeyStr, id); return; }
-  if (action !== '1') return;
+  document.getElementById('blockTitle').value = b.title;
   document.getElementById('blockStart').value = b.start;
   document.getElementById('blockEnd').value = b.end;
-  document.getElementById('blockTitle').value = b.title;
   document.getElementById('blockModal').dataset.editId = id;
+  document.getElementById('blockModal').dataset.dayKey = dayKeyStr;
+  document.getElementById('blockModalTitle').textContent = '✏️ ערוך בלוק';
+  document.getElementById('blockSaveBtn').textContent = 'שמור שינויים';
+  document.getElementById('blockDeleteBtn').style.display = 'inline-flex';
   document.getElementById('blockModal').classList.add('show');
+  setTimeout(() => document.getElementById('blockTitle').focus(), 50);
+}
+
+async function deleteBlockFromModal() {
+  const editId = document.getElementById('blockModal').dataset.editId;
+  const dk = document.getElementById('blockModal').dataset.dayKey || todayKey();
+  if (!editId) return;
+  const b = (DB.timeBlocks[dk]||[]).find(x => x.id === editId);
+  const ok = await confirmDialog(
+    'למחוק את הבלוק?',
+    b ? `"${b.title}" · ${b.start}–${b.end}` : 'הפעולה לא ניתנת לביטול.',
+    { danger: true, confirmText: '🗑 מחק' }
+  );
+  if (!ok) return;
+  DB.timeBlocks[dk] = (DB.timeBlocks[dk]||[]).filter(x => x.id !== editId);
+  save(); closeBlockModal(); renderCalendar();
+  toast('הבלוק נמחק', 'success');
 }
 function addTimeBlock() {
   document.getElementById('blockStart').value = '09:00';
   document.getElementById('blockEnd').value = '10:00';
   document.getElementById('blockTitle').value = '';
+  _resetBlockModalToCreate();
   document.getElementById('blockModal').classList.add('show');
+  setTimeout(() => document.getElementById('blockTitle').focus(), 50);
 }
 function closeBlockModal() {
   document.getElementById('blockModal').classList.remove('show');
+  _resetBlockModalToCreate();
 }
 function saveBlock() {
   const title = document.getElementById('blockTitle').value.trim();
   const start = document.getElementById('blockStart').value;
   const end = document.getElementById('blockEnd').value;
-  if (!title || !start || !end) return toast('מלא את כל השדות');
-  if (timeToMin(end) <= timeToMin(start)) return toast('שעת הסיום חייבת להיות אחרי שעת ההתחלה');
-  const k = todayKey();
+  if (!title || !start || !end) return toast('מלא את כל השדות', 'danger');
+  if (timeToMin(end) <= timeToMin(start)) return toast('שעת הסיום חייבת להיות אחרי שעת ההתחלה', 'danger');
+  const k = document.getElementById('blockModal').dataset.dayKey || todayKey();
   DB.timeBlocks[k] = DB.timeBlocks[k] || [];
   const editId = document.getElementById('blockModal').dataset.editId;
   if (editId) {
@@ -2204,10 +2408,13 @@ function saveBlock() {
   }
   save(); closeBlockModal(); renderCalendar();
 }
-function removeBlock(k, id) {
-  if (!confirm('למחוק את הבלוק?')) return;
+async function removeBlock(k, id) {
+  const b = (DB.timeBlocks[k]||[]).find(x => x.id === id);
+  const ok = await confirmDialog('למחוק את הבלוק?', b ? `"${b.title}" · ${b.start}–${b.end}` : '', { danger: true, confirmText: '🗑 מחק' });
+  if (!ok) return;
   DB.timeBlocks[k] = (DB.timeBlocks[k]||[]).filter(b => b.id !== id);
   save(); renderCalendar();
+  toast('הבלוק נמחק', 'success');
 }
 
 /* ─── DASHBOARD ─── */
@@ -2442,10 +2649,17 @@ function updateStreak() {
 }
 
 /* ─── DAILY REVIEW ─── */
-function dailyReview() {
-  const three = prompt('כתוב את 3 המשימות הכי חשובות להיום, מופרדות בנקודה (.)\n\nאם רק תעשה אותן — היום מצליח.');
+async function dailyReview() {
+  const three = await promptDialog('🌅 תכנון הבוקר', {
+    message: 'אם רק תעשה את 3 אלה — היום מצליח.\nכתוב משימה בכל שורה.',
+    multiline: true,
+    rows: 5,
+    placeholder: '1. ...\n2. ...\n3. ...',
+    confirmText: 'הוסף ל"דחוף + חשוב"'
+  });
   if (!three) return;
-  const items = three.split('.').map(s => s.trim()).filter(Boolean).slice(0,3);
+  const items = three.split(/[\n.]/).map(s => s.replace(/^\s*[\d.\-)]+\s*/, '').trim()).filter(Boolean).slice(0,3);
+  if (!items.length) return;
   items.forEach(text => {
     DB.tasks.push({ id: uid(), text, q: 'q1', done:false, tag:'יעד יומי', created: Date.now() });
   });
@@ -2470,10 +2684,15 @@ function importData() {
   inp.onchange = () => {
     const f = inp.files[0]; if (!f) return;
     const r = new FileReader();
-    r.onload = () => {
+    r.onload = async () => {
       try {
         const data = JSON.parse(r.result);
-        if (!confirm('זה ידרוס את הנתונים הקיימים. להמשיך?')) return;
+        const ok = await confirmDialog(
+          'לייבא את הנתונים?',
+          'הפעולה תדרוס את הנתונים הקיימים — משימות, יעדים, הרגלים, יומן וסשני פומודורו.\n\nמומלץ לייצא גיבוי קודם.',
+          { danger: true, confirmText: 'דרוס וייבא' }
+        );
+        if (!ok) return;
         DB = { ...DB, ...data };
         save();
         renderDashboard(); renderTasks(); renderGoals(); renderHabits(); renderJournal();
