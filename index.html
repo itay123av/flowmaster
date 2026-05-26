@@ -2,7 +2,12 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FlowMaster">
+<meta name="mobile-web-app-capable" content="yes">
 <title>FlowMaster — מערכת ניהול זמן</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,8 +55,18 @@ body {
   overflow: hidden;
   font-size: 14px;
   transition: background .3s, color .3s;
+  /* prevent iOS bounce / pull-to-refresh */
+  overscroll-behavior-y: contain;
+  -webkit-tap-highlight-color: transparent;
 }
-.app { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
+.app { display: grid; grid-template-columns: 240px 1fr; height: 100vh; height: 100dvh; }
+.mobile-menu-btn { display: none; }
+.mobile-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+  z-index: 40; animation: fadeIn .2s;
+}
+.mobile-backdrop.show { display: block; }
 /* ─── SIDEBAR ─── */
 .sidebar {
   background: linear-gradient(180deg, var(--bg-2), var(--bg));
@@ -598,6 +613,178 @@ select.task-priority {
   font-size: 11px;
   font-family: inherit;
 }
+
+/* ═══════════════════════════════════════════════
+   MOBILE — ≤ 768px
+   ═══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  body { font-size: 14px; }
+  .app { grid-template-columns: 1fr; }
+
+  /* Sidebar becomes off-canvas drawer from the right (RTL) */
+  .sidebar {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: 280px; max-width: 85vw;
+    z-index: 50;
+    transform: translateX(100%);
+    transition: transform .25s ease;
+    box-shadow: -10px 0 40px rgba(0,0,0,0.4);
+    border-left: none;
+    border-right: 1px solid var(--border);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .mobile-menu-btn { display: inline-flex; }
+
+  /* Topbar compact */
+  .topbar {
+    height: 56px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .topbar h1 { font-size: 16px; flex: 1; min-width: 0; }
+  .search-box { display: none; }
+  .topbar .btn-primary {
+    padding: 8px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .topbar .btn-primary .kbd { display: none; }
+  /* hide rare actions on small screens — accessible via sidebar */
+  .topbar .btn-icon[title*="ייצוא"], .topbar .btn-icon[title*="ייבוא"] { display: none; }
+
+  /* Content padding tighter */
+  .content { padding: 14px; padding-bottom: 80px; }
+
+  /* All grids stack */
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+
+  /* Eisenhower stacks vertically */
+  .eisenhower {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    height: auto;
+    gap: 14px;
+  }
+  .quad { min-height: 180px; max-height: 380px; }
+
+  /* Touch-friendly tasks */
+  .task {
+    padding: 14px 12px;
+    cursor: pointer;
+    min-height: 52px;
+    gap: 12px;
+  }
+  .task-check { width: 24px; height: 24px; margin-top: 0; }
+  .task-check.checked::after { font-size: 14px; }
+  .task-text { font-size: 14px; }
+  .task-delete { opacity: 1; padding: 8px 10px; font-size: 16px; min-width: 40px; }
+  .task-input { padding: 14px 12px; font-size: 16px; }
+  .task-move-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-dim); border-radius: 6px;
+    padding: 4px 10px; font-size: 11px; cursor: pointer;
+    margin-top: 4px;
+  }
+
+  /* Pomodoro responsive */
+  .pomo-circle {
+    width: min(280px, 80vw);
+    height: min(280px, 80vw);
+  }
+  .pomo-svg { width: 100%; height: 100%; }
+  .pomo-time { font-size: 44px; }
+  .pomo-modes { flex-wrap: wrap; justify-content: center; }
+  .pomo-mode { padding: 8px 12px; font-size: 12px; }
+  .pomo-controls { gap: 14px; }
+  .pomo-btn { width: 60px; height: 60px; font-size: 20px; }
+  .pomodoro-wrap { padding: 20px 10px; }
+  #pomoTask { width: 100% !important; max-width: 320px; font-size: 16px !important; }
+
+  /* Habits */
+  .habit-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px;
+  }
+  .habit-name { font-size: 14px; }
+  .habit-cells {
+    grid-template-columns: repeat(14, 1fr);
+    gap: 4px;
+  }
+  .habit-cell { min-height: 18px; border-radius: 4px; }
+  .habit-streak { text-align: right; font-size: 16px; }
+
+  /* Calendar */
+  .day-schedule { max-height: 60vh; }
+  .hour-label { font-size: 11px; padding: 6px 2px; }
+  .hour-slot { min-height: 56px; }
+  .time-block { font-size: 11px; padding: 8px; }
+
+  /* Dashboard */
+  .greeting { font-size: 22px; }
+  .stat-card { padding: 14px; }
+  .stat-value { font-size: 22px; }
+  .stat-label { font-size: 11px; }
+  .day-cell { padding: 10px 4px; }
+  .day-num { font-size: 16px; }
+  .day-name { font-size: 10px; }
+
+  /* Cards */
+  .card { padding: 16px; }
+  .card-title { font-size: 15px; }
+
+  /* Modal — full-screen-ish, prevents iOS zoom on input */
+  .modal {
+    width: 95vw;
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 18px;
+  }
+  .modal input, .modal select, .modal textarea {
+    font-size: 16px !important;
+    padding: 12px;
+  }
+  .modal-actions { flex-wrap: wrap; }
+  .modal-actions .btn { flex: 1; justify-content: center; min-height: 44px; }
+
+  /* Focus mode */
+  .focus-time { font-size: 80px; }
+  .focus-task { font-size: 20px; margin-bottom: 20px; text-align: center; padding: 0 20px; }
+
+  /* Bigger touch targets everywhere */
+  .btn { padding: 10px 14px; min-height: 42px; }
+  .btn-icon { padding: 10px 12px; min-width: 42px; justify-content: center; }
+  .nav-item { padding: 14px; min-height: 48px; }
+  .nav-item .icon { font-size: 20px; }
+  .mood { width: 48px; height: 48px; font-size: 22px; }
+  textarea.journal-text { font-size: 16px; }
+  .journal-text { min-height: 140px; }
+
+  /* Chart bars */
+  .chart-bar { height: 140px; }
+  .bar-label { font-size: 10px; }
+
+  /* Goal cards */
+  .goal-card { padding: 14px; }
+  .goal-title { font-size: 15px; }
+}
+
+@media (max-width: 380px) {
+  .topbar .btn-primary .label-full { display: none; }
+  .topbar .btn-primary::before { content: '+'; font-size: 18px; }
+  .pomo-mode { padding: 6px 10px; font-size: 11px; }
+  .pomo-time { font-size: 38px; }
+}
+
+/* Disable native HTML5 drag on touch devices — was making things jumpy */
+@media (pointer: coarse) {
+  .task { cursor: pointer; -webkit-user-drag: none; -webkit-touch-callout: none; }
+  .task[draggable="true"] { /* unset visually */ }
+  /* Smooth scrolling and no rubber-band weirdness */
+  .quad-list, .content, .day-schedule, .sidebar { -webkit-overflow-scrolling: touch; }
+  /* prevent text selection on tap-and-hold */
+  .nav-item, .pomo-mode, .quad-header, .stat-card, .day-cell { -webkit-user-select: none; user-select: none; }
+}
 </style>
 </head>
 <body>
@@ -631,12 +818,15 @@ select.task-priority {
     </div>
   </aside>
 
+  <div class="mobile-backdrop" onclick="closeSidebar()"></div>
+
   <!-- ─── MAIN ─── -->
   <main class="main">
     <div class="topbar">
+      <button class="btn btn-icon mobile-menu-btn" onclick="toggleSidebar()" aria-label="תפריט" style="font-size:18px">☰</button>
       <h1 id="viewTitle">דשבורד</h1>
       <input type="text" class="search-box" id="searchBox" placeholder="חיפוש... (Ctrl+K)">
-      <button class="btn btn-primary" onclick="openQuickAdd()">+ משימה מהירה <span class="kbd">Q</span></button>
+      <button class="btn btn-primary" onclick="openQuickAdd()"><span class="label-full">+ משימה מהירה</span> <span class="kbd">Q</span></button>
       <button class="btn btn-icon" onclick="exportData()" title="ייצוא נתונים">⬇</button>
       <button class="btn btn-icon" onclick="importData()" title="ייבוא נתונים">⬆</button>
     </div>
@@ -1179,6 +1369,19 @@ function toggleTheme() {
   save();
 }
 
+/* ─── TOUCH DETECTION ─── */
+const IS_TOUCH = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window);
+
+/* ─── MOBILE SIDEBAR ─── */
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.querySelector('.mobile-backdrop').classList.toggle('show');
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.querySelector('.mobile-backdrop').classList.remove('show');
+}
+
 /* ─── NAVIGATION ─── */
 function switchView(view) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -1197,6 +1400,10 @@ function switchView(view) {
   if (view === 'habits') renderHabits();
   if (view === 'journal') renderJournal();
   if (view === 'analytics') renderAnalytics();
+  // on mobile, auto-close drawer after pick
+  closeSidebar();
+  // scroll content back to top so each view starts fresh
+  document.querySelector('.content').scrollTo({ top: 0, behavior: 'instant' });
 }
 document.querySelectorAll('.nav-item').forEach(n => {
   n.addEventListener('click', () => switchView(n.dataset.view));
@@ -1219,18 +1426,23 @@ function renderTasks() {
       list.innerHTML = '<div class="empty"><div style="font-size:30px;opacity:.3">📭</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">אין משימות פה</div></div>';
     } else {
       list.innerHTML = tasks.map(t => `
-        <div class="task ${t.done?'done':''}" draggable="true" data-id="${t.id}">
+        <div class="task ${t.done?'done':''}" ${IS_TOUCH ? '' : 'draggable="true"'} data-id="${t.id}">
           <div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div>
           <div class="task-body">
             <div class="task-text">${escapeHtml(t.text)}</div>
-            ${t.tag ? `<div class="task-meta"><span class="task-tag">${escapeHtml(t.tag)}</span></div>` : ''}
+            <div class="task-meta">
+              ${t.tag ? `<span class="task-tag">${escapeHtml(t.tag)}</span>` : ''}
+              ${IS_TOUCH ? `<button class="task-move-btn" onclick="moveTaskMenu('${t.id}', event)">⇄ העבר</button>` : ''}
+            </div>
           </div>
           <button class="task-delete" onclick="deleteTask('${t.id}')">✕</button>
         </div>`).join('');
-      // drag and drop
-      list.querySelectorAll('.task').forEach(taskEl => {
-        taskEl.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', taskEl.dataset.id));
-      });
+      // drag and drop (desktop only)
+      if (!IS_TOUCH) {
+        list.querySelectorAll('.task').forEach(taskEl => {
+          taskEl.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', taskEl.dataset.id));
+        });
+      }
     }
   });
   updateBadges();
@@ -1272,6 +1484,20 @@ function toggleTask(id) {
 function deleteTask(id) {
   DB.tasks = DB.tasks.filter(t => t.id !== id);
   save(); renderTasks();
+}
+function moveTaskMenu(id, event) {
+  event && event.stopPropagation();
+  const t = DB.tasks.find(t => t.id === id);
+  if (!t) return;
+  const labels = { q1:'🔥 דחוף + חשוב', q2:'⭐ חשוב', q3:'⚡ דחוף', q4:'🗑 כל השאר' };
+  const choice = prompt(`העבר את "${t.text}" לרביע:\n\n1 — ${labels.q1}\n2 — ${labels.q2}\n3 — ${labels.q3}\n4 — ${labels.q4}\n\nהקלד מספר 1-4:`);
+  if (!choice) return;
+  const map = { '1':'q1', '2':'q2', '3':'q3', '4':'q4' };
+  if (map[choice.trim()]) {
+    t.q = map[choice.trim()];
+    save(); renderTasks();
+    toast('המשימה הועברה ✓', 'success');
+  }
 }
 
 /* ─── QUICK ADD ─── */
