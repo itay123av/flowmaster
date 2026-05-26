@@ -652,6 +652,143 @@ textarea.journal-text {
 }
 .dialog-input:focus { outline: none; border-color: var(--primary); }
 
+/* ─── AUTH SCREEN ─── */
+.auth-screen {
+  position: fixed; inset: 0;
+  background: radial-gradient(circle at 30% 20%, #1e2a4d 0%, #0a0e1a 70%);
+  z-index: 1000;
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 20px;
+  animation: fadeIn .4s;
+}
+.auth-screen.show { display: flex; }
+.auth-card {
+  width: 100%; max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 32px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,102,241,0.15);
+  position: relative;
+  overflow: hidden;
+}
+.auth-card::before {
+  content: ''; position: absolute; top: -50%; right: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(99,102,241,0.15), transparent 50%);
+  pointer-events: none;
+}
+.auth-logo {
+  width: 64px; height: 64px;
+  background: linear-gradient(135deg, var(--primary), var(--purple), var(--pink));
+  border-radius: 18px;
+  display: grid; place-items: center;
+  font-size: 32px;
+  margin: 0 auto 20px;
+  box-shadow: 0 10px 30px rgba(99,102,241,0.4);
+  position: relative;
+}
+.auth-title {
+  text-align: center;
+  font-size: 28px; font-weight: 800;
+  background: linear-gradient(135deg, var(--primary), var(--purple), var(--pink));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  margin-bottom: 6px;
+}
+.auth-sub {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 14px;
+  margin-bottom: 32px;
+  position: relative;
+}
+.auth-form { position: relative; }
+.auth-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 500;
+  text-align: center;
+  letter-spacing: 2px;
+  transition: all .2s;
+}
+.auth-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.15);
+}
+.auth-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  border: none;
+  color: white;
+  border-radius: 12px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(99,102,241,0.35);
+  transition: all .2s;
+}
+.auth-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(99,102,241,0.5); }
+.auth-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+.auth-tip {
+  margin-top: 22px;
+  padding: 14px;
+  background: rgba(99,102,241,0.08);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  position: relative;
+}
+.auth-tip strong { color: var(--text); }
+.auth-status {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 14px;
+  min-height: 18px;
+  position: relative;
+}
+.auth-status.error { color: var(--danger); }
+.auth-status.ok { color: var(--success); }
+
+/* sync indicator in topbar */
+.sync-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  display: inline-block;
+  margin-left: 6px;
+  box-shadow: 0 0 8px var(--success);
+  animation: pulse 2s infinite;
+}
+.sync-dot.syncing { background: var(--warning); box-shadow: 0 0 8px var(--warning); }
+.sync-dot.offline { background: var(--text-muted); box-shadow: none; animation: none; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.user-badge {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
 /* ─── TOAST ─── */
 .toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
@@ -918,6 +1055,32 @@ select.task-priority {
 </head>
 <body>
 
+<!-- ─── AUTH / LOGIN SCREEN ─── -->
+<div class="auth-screen show" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">⚡</div>
+    <div class="auth-title">FlowMaster</div>
+    <div class="auth-sub">המערכת שמלווה אותך לכל מקום</div>
+    <form class="auth-form" onsubmit="event.preventDefault(); authSubmit()">
+      <input type="text" class="auth-input" id="authInput" placeholder="הקוד האישי שלך" autocomplete="off" autocapitalize="off" inputmode="text">
+      <button type="submit" class="auth-btn" id="authBtn">כנס</button>
+      <div class="auth-status" id="authStatus"></div>
+    </form>
+    <div class="auth-tip">
+      💡 <strong>איך זה עובד?</strong><br>
+      בחר קוד אישי שתזכור — מילה, מספר, משפט, מה שתרצה.<br>
+      אותו קוד = אותם נתונים בכל מכשיר, מכל דפדפן, תמיד.<br>
+      <span style="color:var(--warning)">קוד פשוט מדי (כמו "1234") עלול להתנגש עם משתמשים אחרים.</span>
+    </div>
+  </div>
+</div>
+<script>
+  // Hide login screen immediately if we already have a saved code — prevents flash of login UI for returning users
+  if (localStorage.getItem('flowmaster_code_v1')) {
+    document.getElementById('authScreen').classList.remove('show');
+  }
+</script>
+
 <div class="app">
   <!-- ─── SIDEBAR ─── -->
   <aside class="sidebar">
@@ -943,7 +1106,9 @@ select.task-priority {
         <div class="streak-num">🔥 <span id="streakDays">0</span></div>
         <div class="streak-label">ימים רצופים של פרודקטיביות</div>
       </div>
-      <button class="btn" style="width:100%;justify-content:center" onclick="toggleTheme()">🌓 החלף ערכת נושא</button>
+      <div class="user-badge" id="userCodeBadge" style="margin-bottom:8px">👤</div>
+      <button class="btn" style="width:100%;justify-content:center;margin-bottom:6px" onclick="toggleTheme()">🌓 ערכת נושא</button>
+      <button class="btn" style="width:100%;justify-content:center;color:var(--danger);border-color:rgba(239,68,68,0.3)" onclick="logoutCloud()">🚪 התנתק</button>
     </div>
   </aside>
 
@@ -953,7 +1118,7 @@ select.task-priority {
   <main class="main">
     <div class="topbar">
       <button class="btn btn-icon mobile-menu-btn" onclick="toggleSidebar()" aria-label="תפריט" style="font-size:18px">☰</button>
-      <h1 id="viewTitle">דשבורד</h1>
+      <h1 id="viewTitle">דשבורד <span class="sync-dot" id="syncDot" title="מסונכרן"></span></h1>
       <input type="text" class="search-box" id="searchBox" placeholder="חיפוש... (Ctrl+K)">
       <button class="btn btn-primary" onclick="openQuickAdd()"><span class="label-full">+ משימה מהירה</span> <span class="kbd">Q</span></button>
       <button class="btn btn-icon" onclick="exportData()" title="ייצוא נתונים">⬇</button>
@@ -1486,6 +1651,168 @@ function load() {
 }
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+  syncToCloud();
+}
+
+/* ─── CLOUD SYNC (Supabase RPC, code-keyed) ─── */
+const SUPABASE_URL = 'https://mregcidikhfzmflofkzz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_SAptMVO3VeyxoU6GhIpgIw_EzuBAQr_';
+const CODE_KEY = 'flowmaster_code_v1';
+let USER_CODE = null;
+let _cloudReady = false;
+let _saveTimer = null;
+let _lastSavedJson = null;
+
+async function cloudRpc(fn, body, timeoutMs = 8000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body),
+      signal: ctrl.signal
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  } finally { clearTimeout(t); }
+}
+const cloudLoad = code => cloudRpc('fm_load', { p_code: code });
+const cloudSave = (code, data) => cloudRpc('fm_save', { p_code: code, p_data: data });
+
+function setSyncStatus(state) {
+  const el = document.getElementById('syncDot');
+  if (!el) return;
+  el.className = 'sync-dot ' + (state || '');
+  const titles = { syncing: 'מסתנכרן…', offline: 'אופליין — שמור מקומית', '': 'מסונכרן' };
+  el.title = titles[state || ''] || '';
+}
+
+function syncToCloud() {
+  if (!USER_CODE || !_cloudReady) return;
+  clearTimeout(_saveTimer);
+  setSyncStatus('syncing');
+  _saveTimer = setTimeout(async () => {
+    try {
+      const json = JSON.stringify(DB);
+      if (json === _lastSavedJson) { setSyncStatus(''); return; }
+      await cloudSave(USER_CODE, DB);
+      _lastSavedJson = json;
+      setSyncStatus('');
+    } catch (e) {
+      console.error('cloud save failed', e);
+      setSyncStatus('offline');
+    }
+  }, 800);
+}
+
+async function authSubmit() {
+  const inp = document.getElementById('authInput');
+  const btn = document.getElementById('authBtn');
+  const status = document.getElementById('authStatus');
+  const code = (inp.value || '').trim();
+  if (!code) { status.textContent = 'הקלד קוד'; status.className = 'auth-status error'; return; }
+  btn.disabled = true; btn.textContent = 'מתחבר…';
+  status.textContent = 'מאחזר את הנתונים שלך מהענן…'; status.className = 'auth-status';
+  try {
+    const cloudData = await cloudLoad(code);
+    USER_CODE = code;
+    localStorage.setItem(CODE_KEY, code);
+    const isReturning = cloudData && Object.keys(cloudData).length > 0;
+    if (isReturning) {
+      DB = { ...DB, ...cloudData };
+      _lastSavedJson = JSON.stringify(DB);
+      status.textContent = '✓ ברוך השב!'; status.className = 'auth-status ok';
+    } else {
+      // First time — upload current localStorage if it has data, otherwise start fresh.
+      let migrated = false;
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const localData = JSON.parse(raw);
+          const hasContent = (localData.tasks||[]).length || (localData.goals||[]).length
+                          || (localData.habits||[]).length || (localData.journal||[]).length
+                          || (localData.pomos||[]).length || Object.keys(localData.timeBlocks||{}).length;
+          if (hasContent) {
+            DB = { ...DB, ...localData };
+            migrated = true;
+          }
+        }
+      } catch(e) {}
+      await cloudSave(code, DB);
+      _lastSavedJson = JSON.stringify(DB);
+      status.textContent = migrated ? '✓ הנתונים המקומיים שלך הועלו לענן' : '✓ חשבון חדש נוצר';
+      status.className = 'auth-status ok';
+    }
+    _cloudReady = true;
+    setTimeout(() => {
+      document.getElementById('authScreen').classList.remove('show');
+      // re-render everything with cloud data
+      renderDashboard(); renderTasks(); renderGoals(); renderHabits();
+      updateBadges(); updateStreak();
+      document.getElementById('userCodeBadge').textContent = '👤 ' + maskCode(code);
+      setSyncStatus('');
+    }, 600);
+  } catch (e) {
+    console.error(e);
+    status.textContent = 'שגיאה בהתחברות — בדוק חיבור אינטרנט'; status.className = 'auth-status error';
+    btn.disabled = false; btn.textContent = 'כנס';
+  }
+}
+
+function maskCode(code) {
+  if (!code) return '';
+  if (code.length <= 2) return code;
+  if (code.length <= 5) return code[0] + '•'.repeat(code.length - 2) + code.slice(-1);
+  return code.slice(0, 2) + '•'.repeat(code.length - 4) + code.slice(-2);
+}
+
+async function logoutCloud() {
+  const ok = await confirmDialog(
+    'להתנתק?',
+    'הקוד יישכח מהמכשיר הזה. הנתונים שלך נשמרו בענן ותוכל לחזור בכל רגע עם אותו קוד.',
+    { confirmText: 'התנתק', danger: true }
+  );
+  if (!ok) return;
+  localStorage.removeItem(CODE_KEY);
+  // clear local data so the next code doesn't see leftovers
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+async function initAuth() {
+  const saved = localStorage.getItem(CODE_KEY);
+  if (!saved) {
+    document.getElementById('authScreen').classList.add('show');
+    setTimeout(() => document.getElementById('authInput').focus(), 200);
+    return false;
+  }
+  // silent login
+  try {
+    const cloudData = await cloudLoad(saved);
+    USER_CODE = saved;
+    if (cloudData && Object.keys(cloudData).length > 0) {
+      DB = { ...DB, ...cloudData };
+      _lastSavedJson = JSON.stringify(DB);
+    }
+    _cloudReady = true;
+    document.getElementById('userCodeBadge').textContent = '👤 ' + maskCode(saved);
+    setSyncStatus('');
+    return true;
+  } catch (e) {
+    console.error('silent login failed', e);
+    // keep going with localStorage; mark offline
+    USER_CODE = saved;
+    _cloudReady = true; // still try future syncs
+    setSyncStatus('offline');
+    document.getElementById('userCodeBadge').textContent = '👤 ' + maskCode(saved);
+    return true;
+  }
 }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function todayKey() { return new Date().toISOString().slice(0,10); }
@@ -2753,12 +3080,17 @@ function escapeHtml(s) {
 /* ─── BOOT ─── */
 load();
 if (DB.settings.theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
-updateStreak();
-renderDashboard();
-renderTasks();
-renderPomoTime();
-loadPomo();
-updateBadges();
+// try silent cloud login first; if no saved code, show auth screen and stop rendering until login
+(async () => {
+  const loggedIn = await initAuth();
+  // either way, render with whatever we have (cloud or local)
+  updateStreak();
+  renderDashboard();
+  renderTasks();
+  renderPomoTime();
+  loadPomo();
+  updateBadges();
+})();
 if (Notification && Notification.permission === 'default') {
   // ask later, not on first load
 }
