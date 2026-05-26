@@ -1,0 +1,2121 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowMaster — מערכת ניהול זמן</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --bg-2: #111827;
+  --surface: #1a2235;
+  --surface-2: #232d44;
+  --border: #2d3a55;
+  --text: #e5e9f0;
+  --text-dim: #8a96b1;
+  --text-muted: #5a6685;
+  --primary: #6366f1;
+  --primary-2: #818cf8;
+  --primary-glow: rgba(99,102,241,0.3);
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #06b6d4;
+  --purple: #a855f7;
+  --pink: #ec4899;
+  --shadow: 0 10px 40px rgba(0,0,0,0.4);
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+[data-theme="light"] {
+  --bg: #f5f7fb;
+  --bg-2: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f1f4fa;
+  --border: #e3e8f0;
+  --text: #1a2235;
+  --text-dim: #5a6685;
+  --text-muted: #8a96b1;
+  --shadow: 0 10px 40px rgba(99,102,241,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Heebo', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  font-size: 14px;
+  transition: background .3s, color .3s;
+}
+.app { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
+/* ─── SIDEBAR ─── */
+.sidebar {
+  background: linear-gradient(180deg, var(--bg-2), var(--bg));
+  border-left: 1px solid var(--border);
+  padding: 20px 14px;
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 8px 22px;
+  font-weight: 800; font-size: 20px;
+  background: linear-gradient(135deg, var(--primary), var(--purple), var(--pink));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.brand-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  border-radius: 10px;
+  display: grid; place-items: center;
+  color: white; font-size: 18px;
+  box-shadow: 0 6px 20px var(--primary-glow);
+}
+.nav-section { margin-bottom: 22px; }
+.nav-title {
+  font-size: 11px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1px;
+  padding: 0 10px 8px; font-weight: 600;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; margin-bottom: 3px;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  cursor: pointer; user-select: none;
+  font-weight: 500;
+  transition: all .15s;
+  position: relative;
+}
+.nav-item:hover { background: var(--surface); color: var(--text); }
+.nav-item.active {
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  color: white;
+  box-shadow: 0 4px 14px var(--primary-glow);
+}
+.nav-item .icon { width: 20px; text-align: center; font-size: 16px; }
+.nav-item .badge {
+  margin-right: auto;
+  background: var(--surface-2); color: var(--text-dim);
+  padding: 2px 8px; border-radius: 10px; font-size: 11px;
+  font-weight: 600;
+}
+.nav-item.active .badge { background: rgba(255,255,255,0.25); color: white; }
+.sidebar-bottom { margin-top: auto; }
+.streak-card {
+  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(236,72,153,0.15));
+  border: 1px solid rgba(245,158,11,0.3);
+  padding: 14px;
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+.streak-num { font-size: 24px; font-weight: 800; color: var(--warning); }
+.streak-label { color: var(--text-dim); font-size: 12px; }
+/* ─── MAIN ─── */
+.main { display: flex; flex-direction: column; overflow: hidden; }
+.topbar {
+  height: 64px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 24px;
+}
+.topbar h1 {
+  font-size: 20px; font-weight: 700;
+  flex: 1;
+}
+.search-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  width: 280px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+}
+.search-box:focus { outline: none; border-color: var(--primary); }
+.btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all .15s;
+}
+.btn:hover { border-color: var(--primary); transform: translateY(-1px); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  border: none; color: white; font-weight: 600;
+  box-shadow: 0 4px 14px var(--primary-glow);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--primary-glow); }
+.btn-icon { padding: 8px 10px; }
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover { background: var(--surface); }
+.content {
+  flex: 1; overflow-y: auto;
+  padding: 24px;
+}
+.view { display: none; animation: fadeIn .3s; }
+.view.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ─── CARDS ─── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-title { font-weight: 700; font-size: 16px; }
+.card-subtitle { color: var(--text-dim); font-size: 12px; }
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1100px){ .grid-4{grid-template-columns:repeat(2,1fr)} .grid-3{grid-template-columns:1fr} }
+
+/* ─── DASHBOARD ─── */
+.greeting {
+  font-size: 28px; font-weight: 800;
+  background: linear-gradient(135deg, var(--text), var(--text-dim));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  margin-bottom: 4px;
+}
+.subtitle { color: var(--text-dim); margin-bottom: 24px; }
+.stat-card {
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; right: 0;
+  width: 80px; height: 80px;
+  background: var(--accent, var(--primary));
+  filter: blur(40px); opacity: .25;
+}
+.stat-label { color: var(--text-dim); font-size: 12px; margin-bottom: 8px; font-weight: 500; }
+.stat-value { font-size: 28px; font-weight: 800; }
+.stat-trend { font-size: 12px; color: var(--success); margin-top: 4px; }
+.stat-trend.down { color: var(--danger); }
+
+/* ─── TASK / EISENHOWER ─── */
+.eisenhower {
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+  gap: 14px; height: calc(100vh - 200px);
+}
+.quad {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.quad-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.quad-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: grid; place-items: center; color: white; font-size: 14px;
+}
+.quad-title { font-weight: 700; flex: 1; }
+.quad-list { flex: 1; overflow-y: auto; padding-left: 4px; }
+.task {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  border: 1px solid transparent;
+  cursor: grab; transition: all .15s;
+}
+.task:hover { border-color: var(--border); }
+.task.done .task-text { text-decoration: line-through; opacity: .5; }
+.task-check {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer; flex-shrink: 0;
+  margin-top: 2px;
+  display: grid; place-items: center;
+  transition: all .15s;
+}
+.task-check.checked {
+  background: linear-gradient(135deg, var(--success), var(--info));
+  border-color: var(--success);
+}
+.task-check.checked::after { content: '✓'; color: white; font-size: 12px; font-weight: bold; }
+.task-body { flex: 1; min-width: 0; }
+.task-text { font-size: 13px; word-break: break-word; }
+.task-meta { display: flex; gap: 8px; margin-top: 4px; font-size: 11px; color: var(--text-muted); }
+.task-tag { background: var(--surface); padding: 1px 8px; border-radius: 10px; }
+.task-delete {
+  background: transparent; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 14px; padding: 2px 6px;
+  opacity: 0; transition: opacity .15s;
+}
+.task:hover .task-delete { opacity: 1; }
+.task-delete:hover { color: var(--danger); }
+.task-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.task-input:focus { outline: none; border-color: var(--primary); }
+
+/* ─── POMODORO ─── */
+.pomodoro-wrap {
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; padding: 40px 20px;
+}
+.pomo-circle {
+  width: 320px; height: 320px;
+  position: relative;
+}
+.pomo-svg { transform: rotate(-90deg); }
+.pomo-bg-ring { fill: none; stroke: var(--surface-2); stroke-width: 12; }
+.pomo-progress {
+  fill: none; stroke: url(#pomoGrad); stroke-width: 12; stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+.pomo-text {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  flex-direction: column; text-align: center;
+}
+.pomo-time { font-size: 64px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.pomo-label { color: var(--text-dim); font-size: 14px; margin-top: 4px; }
+.pomo-controls { display: flex; gap: 10px; margin-top: 30px; }
+.pomo-btn {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  border: none; color: white;
+  cursor: pointer; font-size: 18px;
+  box-shadow: 0 6px 20px var(--primary-glow);
+  transition: all .15s;
+}
+.pomo-btn:hover { transform: scale(1.08); }
+.pomo-btn.secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+.pomo-modes { display: flex; gap: 6px; margin-bottom: 24px; background: var(--surface-2); padding: 4px; border-radius: 10px; }
+.pomo-mode {
+  padding: 8px 16px; border-radius: 8px; cursor: pointer;
+  color: var(--text-dim); font-weight: 500;
+  transition: all .15s;
+}
+.pomo-mode.active { background: var(--surface); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+
+/* ─── HABITS ─── */
+.habit-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 80px;
+  gap: 10px; align-items: center;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+}
+.habit-name { font-weight: 600; }
+.habit-cells { display: grid; grid-template-columns: repeat(30, 1fr); gap: 3px; }
+.habit-cell {
+  aspect-ratio: 1;
+  background: var(--bg);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.habit-cell:hover { transform: scale(1.3); }
+.habit-cell.done { background: linear-gradient(135deg, var(--success), var(--info)); }
+.habit-streak { text-align: center; font-weight: 700; color: var(--warning); }
+
+/* ─── GOALS ─── */
+.goal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.goal-card::after {
+  content: ''; position: absolute; bottom: 0; right: 0; left: 0;
+  height: 3px; background: var(--surface-2);
+}
+.goal-card .progress-bar {
+  position: absolute; bottom: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--purple), var(--pink));
+  transition: width .4s;
+}
+.goal-title { font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+.goal-desc { color: var(--text-dim); font-size: 13px; margin-bottom: 10px; }
+.goal-progress { display: flex; align-items: center; gap: 10px; }
+.goal-progress-text { color: var(--text-dim); font-size: 12px; }
+.goal-milestones { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.milestone {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0; font-size: 13px;
+}
+
+/* ─── JOURNAL ─── */
+.journal-entry {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 12px;
+}
+.journal-date {
+  font-size: 13px; color: var(--text-dim); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.mood-pick { display: flex; gap: 6px; margin: 10px 0; }
+.mood {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 2px solid transparent;
+  cursor: pointer; font-size: 18px;
+  display: grid; place-items: center;
+  transition: all .15s;
+}
+.mood:hover { transform: scale(1.1); }
+.mood.selected { border-color: var(--primary); background: var(--primary-glow); }
+textarea.journal-text {
+  width: 100%; min-height: 120px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  color: var(--text);
+  font-family: inherit; font-size: 14px;
+  resize: vertical;
+}
+.journal-prompt {
+  background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1));
+  border-right: 3px solid var(--primary);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  font-style: italic;
+  color: var(--text-dim);
+}
+
+/* ─── CALENDAR ─── */
+.day-schedule {
+  display: grid; grid-template-columns: 60px 1fr;
+  gap: 0; max-height: calc(100vh - 200px); overflow-y: auto;
+}
+.hour-label {
+  color: var(--text-muted); font-size: 12px;
+  padding: 8px 4px; text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.hour-slot {
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  min-height: 50px;
+  padding: 4px; cursor: pointer;
+  transition: background .15s;
+}
+.hour-slot:hover { background: var(--surface-2); }
+.time-block {
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  color: white; padding: 6px 10px;
+  border-radius: var(--radius-sm); margin-bottom: 2px;
+  font-size: 12px; font-weight: 500;
+}
+
+/* ─── ANALYTICS ─── */
+.chart-bar {
+  height: 200px; display: flex; align-items: flex-end;
+  gap: 6px; padding: 10px 0;
+}
+.bar-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.bar {
+  width: 100%;
+  background: linear-gradient(180deg, var(--primary), var(--purple));
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+  transition: height .4s;
+}
+.bar-label { font-size: 11px; color: var(--text-dim); }
+
+/* ─── QUICK ADD MODAL ─── */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  display: none; place-items: center;
+  z-index: 100;
+}
+.modal-bg.show { display: grid; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: min(520px, 90vw);
+  box-shadow: var(--shadow);
+  animation: pop .2s;
+}
+@keyframes pop { from { transform: scale(.92); opacity: 0; } }
+.modal h2 { margin-bottom: 16px; }
+.modal .form-row { margin-bottom: 14px; }
+.modal label { font-size: 12px; color: var(--text-dim); display: block; margin-bottom: 6px; font-weight: 600; }
+.modal input, .modal select, .modal textarea {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  color: var(--text);
+  font-family: inherit; font-size: 14px;
+}
+.modal input:focus, .modal select:focus, .modal textarea:focus {
+  outline: none; border-color: var(--primary);
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 12px 20px; border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 200; opacity: 0; pointer-events: none;
+  transition: all .25s;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(-10px); }
+.toast.success { border-color: var(--success); }
+.toast.danger { border-color: var(--danger); }
+
+/* ─── FOCUS MODE ─── */
+.focus-overlay {
+  position: fixed; inset: 0;
+  background: radial-gradient(circle at center, #1a1f3a 0%, #0a0e1a 100%);
+  z-index: 50; display: none;
+  align-items: center; justify-content: center; flex-direction: column;
+}
+.focus-overlay.show { display: flex; }
+.focus-time { font-size: 120px; font-weight: 900; font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, var(--primary), var(--pink));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.focus-task { font-size: 32px; color: var(--text-dim); margin-bottom: 40px; }
+.focus-exit {
+  position: absolute; top: 24px; left: 24px;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
+.empty {
+  text-align: center; padding: 40px 20px;
+  color: var(--text-muted);
+}
+.empty-icon { font-size: 48px; margin-bottom: 12px; opacity: .5; }
+.kbd {
+  display: inline-block;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 1px 6px; font-size: 11px; font-family: monospace;
+}
+.tip-box {
+  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.08));
+  border: 1px solid rgba(99,102,241,0.2);
+  padding: 14px; border-radius: var(--radius);
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.tip-box .tip-icon { font-size: 24px; }
+
+.weekly-overview {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;
+  margin-top: 16px;
+}
+.day-cell {
+  background: var(--surface-2);
+  padding: 12px 8px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  cursor: pointer;
+  transition: all .15s;
+}
+.day-cell:hover { transform: translateY(-2px); }
+.day-cell.today { background: linear-gradient(135deg, var(--primary), var(--purple)); color: white; }
+.day-name { font-size: 11px; color: var(--text-dim); }
+.day-cell.today .day-name { color: rgba(255,255,255,0.8); }
+.day-num { font-size: 18px; font-weight: 700; margin-top: 4px; }
+.day-dots { display: flex; justify-content: center; gap: 2px; margin-top: 4px; min-height: 6px; }
+.day-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--success); }
+
+.priority-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  display: inline-block; margin-left: 6px;
+}
+
+select.task-priority {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: inherit;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      FlowMaster
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">ניווט</div>
+      <div class="nav-item active" data-view="dashboard"><span class="icon">🏠</span><span>דשבורד</span></div>
+      <div class="nav-item" data-view="tasks"><span class="icon">✅</span><span>משימות</span><span class="badge" id="badge-tasks">0</span></div>
+      <div class="nav-item" data-view="calendar"><span class="icon">📅</span><span>לוח זמנים</span></div>
+      <div class="nav-item" data-view="pomodoro"><span class="icon">🍅</span><span>פומודורו</span></div>
+      <div class="nav-item" data-view="goals"><span class="icon">🎯</span><span>יעדים</span><span class="badge" id="badge-goals">0</span></div>
+      <div class="nav-item" data-view="habits"><span class="icon">🔥</span><span>הרגלים</span></div>
+      <div class="nav-item" data-view="journal"><span class="icon">📔</span><span>יומן</span></div>
+      <div class="nav-item" data-view="analytics"><span class="icon">📊</span><span>אנליטיקה</span></div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="streak-card">
+        <div class="streak-num">🔥 <span id="streakDays">0</span></div>
+        <div class="streak-label">ימים רצופים של פרודקטיביות</div>
+      </div>
+      <button class="btn" style="width:100%;justify-content:center" onclick="toggleTheme()">🌓 החלף ערכת נושא</button>
+    </div>
+  </aside>
+
+  <!-- ─── MAIN ─── -->
+  <main class="main">
+    <div class="topbar">
+      <h1 id="viewTitle">דשבורד</h1>
+      <input type="text" class="search-box" id="searchBox" placeholder="חיפוש... (Ctrl+K)">
+      <button class="btn btn-primary" onclick="openQuickAdd()">+ משימה מהירה <span class="kbd">Q</span></button>
+      <button class="btn btn-icon" onclick="exportData()" title="ייצוא נתונים">⬇</button>
+      <button class="btn btn-icon" onclick="importData()" title="ייבוא נתונים">⬆</button>
+    </div>
+
+    <div class="content">
+      <!-- ═══ DASHBOARD ═══ -->
+      <div class="view active" id="view-dashboard">
+        <div class="greeting" id="greeting">שלום</div>
+        <div class="subtitle" id="dateSubtitle"></div>
+
+        <div class="tip-box">
+          <div class="tip-icon">💡</div>
+          <div>
+            <strong id="tipTitle">טיפ היום</strong>
+            <div id="tipText" style="color:var(--text-dim);font-size:13px;margin-top:2px"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-4" style="margin-bottom:20px">
+          <div class="stat-card" style="--accent:var(--success)">
+            <div class="stat-label">משימות שהושלמו היום</div>
+            <div class="stat-value" id="statDone">0</div>
+            <div class="stat-trend" id="statDoneTrend">+0 מאתמול</div>
+          </div>
+          <div class="stat-card" style="--accent:var(--warning)">
+            <div class="stat-label">פומודורו היום</div>
+            <div class="stat-value" id="statPomo">0</div>
+            <div class="stat-trend">⏱ <span id="statPomoMins">0</span> דקות מיקוד</div>
+          </div>
+          <div class="stat-card" style="--accent:var(--info)">
+            <div class="stat-label">הרגלים פעילים</div>
+            <div class="stat-value" id="statHabits">0</div>
+            <div class="stat-trend"><span id="statHabitsDone">0</span> סומנו היום</div>
+          </div>
+          <div class="stat-card" style="--accent:var(--pink)">
+            <div class="stat-label">ציון פרודקטיביות</div>
+            <div class="stat-value" id="statScore">0</div>
+            <div class="stat-trend" id="statScoreTrend">מתוך 100</div>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">המשימות החשובות להיום</div>
+                <div class="card-subtitle">מה דחוף + חשוב</div>
+              </div>
+              <button class="btn btn-ghost" onclick="switchView('tasks')">צפה בהכל →</button>
+            </div>
+            <div id="dashTopTasks"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">מבט שבועי</div>
+                <div class="card-subtitle">תפוקה ב־7 הימים האחרונים</div>
+              </div>
+            </div>
+            <div class="weekly-overview" id="weeklyOverview"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-top:16px">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">היעדים שלי</div>
+                <div class="card-subtitle">בדרך למימוש הפוטנציאל</div>
+              </div>
+              <button class="btn btn-ghost" onclick="switchView('goals')">נהל →</button>
+            </div>
+            <div id="dashGoals"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">סקירה יומית</div>
+                <div class="card-subtitle">3 דקות שמשנות את הכל</div>
+              </div>
+            </div>
+            <div style="display:grid;gap:10px">
+              <button class="btn" onclick="dailyReview()" style="justify-content:flex-start;padding:14px">
+                🌅 <span><strong>תכנון בוקר</strong><div style="font-size:11px;color:var(--text-dim)">הגדר 3 משימות ליום</div></span>
+              </button>
+              <button class="btn" onclick="switchView('journal')" style="justify-content:flex-start;padding:14px">
+                🌙 <span><strong>סיכום ערב</strong><div style="font-size:11px;color:var(--text-dim)">רפלקציה ושיפור</div></span>
+              </button>
+              <button class="btn" onclick="switchView('pomodoro')" style="justify-content:flex-start;padding:14px">
+                🎯 <span><strong>התחל בלוק מיקוד</strong><div style="font-size:11px;color:var(--text-dim)">25 דקות עבודה עמוקה</div></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TASKS / EISENHOWER ═══ -->
+      <div class="view" id="view-tasks">
+        <div class="eisenhower">
+          <div class="quad" data-quad="q1">
+            <div class="quad-header">
+              <div class="quad-icon" style="background:var(--danger)">🔥</div>
+              <div>
+                <div class="quad-title">דחוף + חשוב</div>
+                <div class="card-subtitle">תעשה עכשיו</div>
+              </div>
+            </div>
+            <div class="quad-list" id="list-q1"></div>
+            <input type="text" class="task-input" placeholder="+ הוסף משימה (Enter)" data-add="q1">
+          </div>
+          <div class="quad" data-quad="q2">
+            <div class="quad-header">
+              <div class="quad-icon" style="background:var(--success)">⭐</div>
+              <div>
+                <div class="quad-title">לא דחוף + חשוב</div>
+                <div class="card-subtitle">תזמן ותתעדף</div>
+              </div>
+            </div>
+            <div class="quad-list" id="list-q2"></div>
+            <input type="text" class="task-input" placeholder="+ הוסף משימה (Enter)" data-add="q2">
+          </div>
+          <div class="quad" data-quad="q3">
+            <div class="quad-header">
+              <div class="quad-icon" style="background:var(--warning)">⚡</div>
+              <div>
+                <div class="quad-title">דחוף + לא חשוב</div>
+                <div class="card-subtitle">האצל למישהו אחר</div>
+              </div>
+            </div>
+            <div class="quad-list" id="list-q3"></div>
+            <input type="text" class="task-input" placeholder="+ הוסף משימה (Enter)" data-add="q3">
+          </div>
+          <div class="quad" data-quad="q4">
+            <div class="quad-header">
+              <div class="quad-icon" style="background:var(--text-muted)">🗑</div>
+              <div>
+                <div class="quad-title">לא דחוף + לא חשוב</div>
+                <div class="card-subtitle">בטל או דחה</div>
+              </div>
+            </div>
+            <div class="quad-list" id="list-q4"></div>
+            <input type="text" class="task-input" placeholder="+ הוסף משימה (Enter)" data-add="q4">
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CALENDAR ═══ -->
+      <div class="view" id="view-calendar">
+        <div class="grid grid-2" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title" id="todayDate"></div>
+                <div class="card-subtitle">לחץ על שעה להוסיף בלוק זמן</div>
+              </div>
+              <button class="btn btn-primary" onclick="addTimeBlock()">+ בלוק חדש</button>
+            </div>
+            <div class="day-schedule" id="daySchedule"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">תכנון זמנים — Time Blocking</div>
+                <div class="card-subtitle">השיטה של הפרודקטיביים בעולם</div>
+              </div>
+            </div>
+            <div style="padding:8px">
+              <p style="color:var(--text-dim);font-size:13px;line-height:1.7">
+              <strong>Time Blocking</strong> זה לחלק את היום שלך לבלוקים של זמן ייעודיים לפעילות אחת.<br><br>
+              <strong>למה זה עובד?</strong><br>
+              • מבטל את הצורך בקבלת החלטות לאורך היום<br>
+              • מאלץ אותך להעריך בריאלי כמה זמן דברים לוקחים<br>
+              • מקטין הסחות דעת ושינוי הקשרים<br>
+              • הופך כוונות לפעולות מתוזמנות<br><br>
+              <strong>טיפים:</strong><br>
+              ✓ תכנן את היום בלילה לפני<br>
+              ✓ השאר 25% מהזמן ל"מאגר חירום"<br>
+              ✓ בלוקים של 60-90 דקות לעבודה עמוקה<br>
+              ✓ קבע בלוקים קבועים לטיפול במייל
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ POMODORO ═══ -->
+      <div class="view" id="view-pomodoro">
+        <div class="card">
+          <div class="pomodoro-wrap">
+            <div class="pomo-modes">
+              <div class="pomo-mode active" data-mode="work" data-duration="25">🍅 עבודה (25)</div>
+              <div class="pomo-mode" data-mode="short" data-duration="5">☕ הפסקה קצרה (5)</div>
+              <div class="pomo-mode" data-mode="long" data-duration="15">🌴 הפסקה ארוכה (15)</div>
+              <div class="pomo-mode" data-mode="deep" data-duration="50">🧠 עבודה עמוקה (50)</div>
+            </div>
+            <div class="pomo-circle">
+              <svg class="pomo-svg" width="320" height="320" viewBox="0 0 320 320">
+                <defs>
+                  <linearGradient id="pomoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#6366f1"/>
+                    <stop offset="50%" stop-color="#a855f7"/>
+                    <stop offset="100%" stop-color="#ec4899"/>
+                  </linearGradient>
+                </defs>
+                <circle class="pomo-bg-ring" cx="160" cy="160" r="140"/>
+                <circle class="pomo-progress" cx="160" cy="160" r="140"
+                  stroke-dasharray="879.6" stroke-dashoffset="0" id="pomoCircle"/>
+              </svg>
+              <div class="pomo-text">
+                <div>
+                  <div class="pomo-time" id="pomoTime">25:00</div>
+                  <div class="pomo-label" id="pomoLabel">מוכן להתחיל?</div>
+                </div>
+              </div>
+            </div>
+            <div class="pomo-controls">
+              <button class="pomo-btn secondary" onclick="resetPomo()" title="איפוס">↻</button>
+              <button class="pomo-btn" id="pomoStartBtn" onclick="togglePomo()">▶</button>
+              <button class="pomo-btn secondary" onclick="enterFocusMode()" title="מצב פוקוס מלא">⛶</button>
+            </div>
+            <div style="margin-top:24px;text-align:center;color:var(--text-dim)">
+              <strong>על מה אתה עובד עכשיו?</strong>
+              <input type="text" id="pomoTask" placeholder="כתוב את המטרה של הסשן הזה" style="display:block;margin:10px auto;width:300px;background:var(--surface-2);border:1px solid var(--border);padding:8px 12px;border-radius:8px;color:var(--text);font-family:inherit">
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-3" style="margin-top:16px">
+          <div class="stat-card" style="--accent:var(--primary)">
+            <div class="stat-label">סשנים היום</div>
+            <div class="stat-value" id="pomoToday">0</div>
+          </div>
+          <div class="stat-card" style="--accent:var(--purple)">
+            <div class="stat-label">סך הכל סשנים</div>
+            <div class="stat-value" id="pomoTotal">0</div>
+          </div>
+          <div class="stat-card" style="--accent:var(--pink)">
+            <div class="stat-label">דקות מיקוד החודש</div>
+            <div class="stat-value" id="pomoMins">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ GOALS ═══ -->
+      <div class="view" id="view-goals">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">היעדים שלי</div>
+              <div class="card-subtitle">פירוק חלומות גדולים לצעדים קטנים</div>
+            </div>
+            <button class="btn btn-primary" onclick="addGoal()">+ יעד חדש</button>
+          </div>
+          <div id="goalsList"></div>
+        </div>
+      </div>
+
+      <!-- ═══ HABITS ═══ -->
+      <div class="view" id="view-habits">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">הרגלים יומיים</div>
+              <div class="card-subtitle">לחץ על משבצת לסמן יום ✓ — שבור את הרצף ותראה איך הכוח מצטבר</div>
+            </div>
+            <button class="btn btn-primary" onclick="addHabit()">+ הרגל חדש</button>
+          </div>
+          <div id="habitsList"></div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="card-header">
+            <div class="card-title">💡 העיקרון של "אל תשבור את השרשרת"</div>
+          </div>
+          <p style="color:var(--text-dim);line-height:1.7">
+          ג'רי סיינפלד אמר שהסוד שלו הוא לוח שנה ענק. בכל יום שכותב, הוא מסמן X. אחרי כמה ימים נוצרת שרשרת.
+          <strong style="color:var(--text)">המשימה היחידה שלך: לא לשבור את השרשרת.</strong><br><br>
+          מחקרים מראים שלוקח <strong style="color:var(--primary)">66 ימים בממוצע</strong> להפוך התנהגות להרגל אוטומטי. אתה רק צריך להגיע לשם.
+          </p>
+        </div>
+      </div>
+
+      <!-- ═══ JOURNAL ═══ -->
+      <div class="view" id="view-journal">
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">רישום חדש</div>
+                <div class="card-subtitle" id="journalDate"></div>
+              </div>
+            </div>
+            <div class="journal-prompt" id="journalPrompt"></div>
+            <div style="margin-bottom:12px">
+              <label style="font-size:12px;color:var(--text-dim);font-weight:600">איך אתה מרגיש?</label>
+              <div class="mood-pick" id="moodPick">
+                <div class="mood" data-mood="1" title="קשה">😞</div>
+                <div class="mood" data-mood="2" title="לא משהו">😕</div>
+                <div class="mood" data-mood="3" title="בסדר">😐</div>
+                <div class="mood" data-mood="4" title="טוב">🙂</div>
+                <div class="mood" data-mood="5" title="מצוין">😄</div>
+              </div>
+            </div>
+            <textarea class="journal-text" id="journalText" placeholder="מה הלך טוב היום? מה אני יכול לשפר? איפה אני שם את הפוקוס מחר?"></textarea>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+              <button class="btn btn-ghost" onclick="insertPrompt('היום הצלחתי לעשות...')">הצלחות 🏆</button>
+              <button class="btn btn-ghost" onclick="insertPrompt('למדתי היום ש...')">למידה 📚</button>
+              <button class="btn btn-ghost" onclick="insertPrompt('אני אסיר תודה על...')">תודה 🙏</button>
+              <button class="btn btn-ghost" onclick="insertPrompt('מחר אני אתמקד ב...')">פוקוס 🎯</button>
+              <button class="btn btn-primary" style="margin-right:auto" onclick="saveJournal()">שמור רישום</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">היסטוריה</div>
+                <div class="card-subtitle">החיים שלך, יום אחר יום</div>
+              </div>
+            </div>
+            <div id="journalHistory"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ ANALYTICS ═══ -->
+      <div class="view" id="view-analytics">
+        <div class="grid grid-3" style="margin-bottom:16px">
+          <div class="stat-card" style="--accent:var(--success)">
+            <div class="stat-label">משימות שהושלמו השבוע</div>
+            <div class="stat-value" id="anWeekTasks">0</div>
+          </div>
+          <div class="stat-card" style="--accent:var(--warning)">
+            <div class="stat-label">סשני פומודורו השבוע</div>
+            <div class="stat-value" id="anWeekPomo">0</div>
+          </div>
+          <div class="stat-card" style="--accent:var(--pink)">
+            <div class="stat-label">ציון פרודקטיביות ממוצע</div>
+            <div class="stat-value" id="anAvgScore">0</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <div class="card-title">פרודקטיביות לפי יום</div>
+            <div class="card-subtitle">משימות שהושלמו ב־14 הימים האחרונים</div>
+          </div>
+          <div class="chart-bar" id="chartTasks"></div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">חלוקת משימות</div>
+              <div class="card-subtitle">מטריצת אייזנהאואר</div>
+            </div>
+            <div id="quadStats"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">תובנות חכמות</div>
+              <div class="card-subtitle">דפוסים בהתנהגות שלך</div>
+            </div>
+            <div id="insights"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ─── QUICK ADD MODAL ─── -->
+<div class="modal-bg" id="quickModal" onclick="if(event.target===this) closeQuickAdd()">
+  <div class="modal">
+    <h2>משימה מהירה</h2>
+    <div class="form-row">
+      <label>מה צריך לעשות?</label>
+      <input type="text" id="quickText" placeholder="כתוב פה...">
+    </div>
+    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <label>חשיבות</label>
+        <select id="quickImportant">
+          <option value="1">חשוב</option>
+          <option value="0">לא חשוב</option>
+        </select>
+      </div>
+      <div>
+        <label>דחיפות</label>
+        <select id="quickUrgent">
+          <option value="1">דחוף</option>
+          <option value="0">לא דחוף</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>תיוג (אופציונלי)</label>
+      <input type="text" id="quickTag" placeholder="עבודה, אישי, לימודים...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeQuickAdd()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveQuickTask()">הוסף</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── GOAL MODAL ─── -->
+<div class="modal-bg" id="goalModal" onclick="if(event.target===this) closeGoalModal()">
+  <div class="modal">
+    <h2>יעד חדש 🎯</h2>
+    <div class="form-row">
+      <label>שם היעד</label>
+      <input type="text" id="goalTitle" placeholder="לרוץ מרתון, לקרוא 24 ספרים, ללמוד פיתון...">
+    </div>
+    <div class="form-row">
+      <label>תיאור (למה זה חשוב לך?)</label>
+      <textarea id="goalDesc" rows="3" placeholder="ה-Why שלך הוא הדלק שיניע אותך"></textarea>
+    </div>
+    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <label>טווח</label>
+        <select id="goalRange">
+          <option value="day">היום</option>
+          <option value="week">השבוע</option>
+          <option value="month">החודש</option>
+          <option value="quarter" selected>הרבעון</option>
+          <option value="year">השנה</option>
+          <option value="life">חיים</option>
+        </select>
+      </div>
+      <div>
+        <label>תאריך יעד</label>
+        <input type="date" id="goalDeadline">
+      </div>
+    </div>
+    <div class="form-row">
+      <label>אבני דרך (מופרדות בפסיק)</label>
+      <input type="text" id="goalMilestones" placeholder="צעד 1, צעד 2, צעד 3">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeGoalModal()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveGoal()">צור יעד</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── HABIT MODAL ─── -->
+<div class="modal-bg" id="habitModal" onclick="if(event.target===this) closeHabitModal()">
+  <div class="modal">
+    <h2>הרגל חדש 🔥</h2>
+    <div class="form-row">
+      <label>שם ההרגל</label>
+      <input type="text" id="habitName" placeholder="20 דקות קריאה, מדיטציה, ספורט...">
+    </div>
+    <div class="form-row">
+      <label>אימוג'י (אופציונלי)</label>
+      <input type="text" id="habitEmoji" placeholder="📚">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeHabitModal()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveHabit()">צור הרגל</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── FOCUS MODE OVERLAY ─── -->
+<div class="focus-overlay" id="focusMode">
+  <button class="btn focus-exit" onclick="exitFocusMode()">✕ צא ממצב פוקוס</button>
+  <div class="focus-task" id="focusTaskName">מיקוד עמוק</div>
+  <div class="focus-time" id="focusTime">25:00</div>
+  <div style="margin-top:30px;color:var(--text-dim)">אל תיגע בטלפון. תנשום. תיכנס למצב.</div>
+</div>
+
+<!-- ─── TIME BLOCK MODAL ─── -->
+<div class="modal-bg" id="blockModal" onclick="if(event.target===this) closeBlockModal()">
+  <div class="modal">
+    <h2>בלוק זמן 📅</h2>
+    <div class="form-row">
+      <label>פעילות</label>
+      <input type="text" id="blockTitle" placeholder="עבודה עמוקה על פרויקט X">
+    </div>
+    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <label>שעת התחלה</label>
+        <input type="time" id="blockStart">
+      </div>
+      <div>
+        <label>שעת סיום</label>
+        <input type="time" id="blockEnd">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeBlockModal()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveBlock()">הוסף בלוק</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   FLOWMASTER — מערכת ניהול זמן ופרודקטיביות
+   כל הנתונים נשמרים מקומית ב־localStorage
+═══════════════════════════════════════════════════════════════════════ */
+
+const STORAGE_KEY = 'flowmaster_data_v1';
+let DB = {
+  tasks: [],          // {id, text, q, done, tag, created, completedAt}
+  goals: [],          // {id, title, desc, range, deadline, milestones:[{text,done}], created}
+  habits: [],         // {id, name, emoji, log:{YYYY-MM-DD:true}, created}
+  journal: [],        // {id, date, mood, text}
+  pomos: [],          // {id, mode, task, completedAt, duration}
+  timeBlocks: {},     // {YYYY-MM-DD: [{start,end,title}]}
+  settings: { theme: 'dark', lastActive: null, streak: 0 }
+};
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) DB = { ...DB, ...JSON.parse(raw) };
+  } catch(e) { console.error('Load failed', e); }
+}
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayKey() { return new Date().toISOString().slice(0,10); }
+function dayKey(d) { return new Date(d).toISOString().slice(0,10); }
+
+/* ─── THEME ─── */
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  DB.settings.theme = next;
+  save();
+}
+
+/* ─── NAVIGATION ─── */
+function switchView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  document.querySelector(`.nav-item[data-view="${view}"]`)?.classList.add('active');
+  const titles = { dashboard:'דשבורד', tasks:'משימות', calendar:'לוח זמנים', pomodoro:'פומודורו',
+                   goals:'יעדים', habits:'הרגלים', journal:'יומן', analytics:'אנליטיקה' };
+  document.getElementById('viewTitle').textContent = titles[view];
+  // refresh data of that view
+  if (view === 'dashboard') renderDashboard();
+  if (view === 'tasks') renderTasks();
+  if (view === 'calendar') renderCalendar();
+  if (view === 'pomodoro') renderPomoStats();
+  if (view === 'goals') renderGoals();
+  if (view === 'habits') renderHabits();
+  if (view === 'journal') renderJournal();
+  if (view === 'analytics') renderAnalytics();
+}
+document.querySelectorAll('.nav-item').forEach(n => {
+  n.addEventListener('click', () => switchView(n.dataset.view));
+});
+
+/* ─── TOAST ─── */
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 2400);
+}
+
+/* ─── TASKS ─── */
+function renderTasks() {
+  ['q1','q2','q3','q4'].forEach(q => {
+    const list = document.getElementById('list-' + q);
+    const tasks = DB.tasks.filter(t => t.q === q).sort((a,b) => (a.done - b.done) || (b.created - a.created));
+    if (tasks.length === 0) {
+      list.innerHTML = '<div class="empty"><div style="font-size:30px;opacity:.3">📭</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">אין משימות פה</div></div>';
+    } else {
+      list.innerHTML = tasks.map(t => `
+        <div class="task ${t.done?'done':''}" draggable="true" data-id="${t.id}">
+          <div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div>
+          <div class="task-body">
+            <div class="task-text">${escapeHtml(t.text)}</div>
+            ${t.tag ? `<div class="task-meta"><span class="task-tag">${escapeHtml(t.tag)}</span></div>` : ''}
+          </div>
+          <button class="task-delete" onclick="deleteTask('${t.id}')">✕</button>
+        </div>`).join('');
+      // drag and drop
+      list.querySelectorAll('.task').forEach(taskEl => {
+        taskEl.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', taskEl.dataset.id));
+      });
+    }
+  });
+  updateBadges();
+}
+function updateBadges() {
+  const open = DB.tasks.filter(t => !t.done).length;
+  document.getElementById('badge-tasks').textContent = open;
+  document.getElementById('badge-goals').textContent = DB.goals.filter(g => !isGoalComplete(g)).length;
+}
+
+document.querySelectorAll('input[data-add]').forEach(inp => {
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && inp.value.trim()) {
+      DB.tasks.push({ id: uid(), text: inp.value.trim(), q: inp.dataset.add, done:false, tag:'', created: Date.now() });
+      inp.value = '';
+      save(); renderTasks(); updateStreak();
+    }
+  });
+});
+
+document.querySelectorAll('.quad').forEach(q => {
+  q.addEventListener('dragover', e => e.preventDefault());
+  q.addEventListener('drop', e => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData('text/plain');
+    const t = DB.tasks.find(t => t.id === id);
+    if (t) { t.q = q.dataset.quad; save(); renderTasks(); }
+  });
+});
+
+function toggleTask(id) {
+  const t = DB.tasks.find(t => t.id === id);
+  if (!t) return;
+  t.done = !t.done;
+  t.completedAt = t.done ? Date.now() : null;
+  save(); renderTasks(); updateStreak();
+  if (t.done) toast('משימה הושלמה! 🎉', 'success');
+}
+function deleteTask(id) {
+  DB.tasks = DB.tasks.filter(t => t.id !== id);
+  save(); renderTasks();
+}
+
+/* ─── QUICK ADD ─── */
+function openQuickAdd() {
+  document.getElementById('quickModal').classList.add('show');
+  setTimeout(() => document.getElementById('quickText').focus(), 50);
+}
+function closeQuickAdd() {
+  document.getElementById('quickModal').classList.remove('show');
+}
+function saveQuickTask() {
+  const text = document.getElementById('quickText').value.trim();
+  if (!text) return;
+  const imp = +document.getElementById('quickImportant').value;
+  const urg = +document.getElementById('quickUrgent').value;
+  const q = imp && urg ? 'q1' : imp ? 'q2' : urg ? 'q3' : 'q4';
+  DB.tasks.push({
+    id: uid(), text, q, done:false,
+    tag: document.getElementById('quickTag').value.trim(),
+    created: Date.now()
+  });
+  save();
+  document.getElementById('quickText').value = '';
+  document.getElementById('quickTag').value = '';
+  closeQuickAdd();
+  renderTasks();
+  renderDashboard();
+  toast('משימה נוספה ✓', 'success');
+}
+
+/* ─── GOALS ─── */
+function isGoalComplete(g) {
+  return g.milestones && g.milestones.length > 0 && g.milestones.every(m => m.done);
+}
+function goalProgress(g) {
+  if (!g.milestones || !g.milestones.length) return 0;
+  return Math.round(g.milestones.filter(m => m.done).length / g.milestones.length * 100);
+}
+function addGoal() {
+  document.getElementById('goalModal').classList.add('show');
+}
+function closeGoalModal() {
+  document.getElementById('goalModal').classList.remove('show');
+}
+function saveGoal() {
+  const title = document.getElementById('goalTitle').value.trim();
+  if (!title) return;
+  const ms = document.getElementById('goalMilestones').value
+    .split(',').map(s => s.trim()).filter(Boolean)
+    .map(text => ({ text, done:false }));
+  DB.goals.push({
+    id: uid(),
+    title,
+    desc: document.getElementById('goalDesc').value.trim(),
+    range: document.getElementById('goalRange').value,
+    deadline: document.getElementById('goalDeadline').value,
+    milestones: ms,
+    created: Date.now()
+  });
+  save();
+  ['goalTitle','goalDesc','goalDeadline','goalMilestones'].forEach(id => document.getElementById(id).value = '');
+  closeGoalModal();
+  renderGoals();
+  toast('יעד חדש נוצר 🎯', 'success');
+}
+function deleteGoal(id) {
+  if (!confirm('למחוק את היעד?')) return;
+  DB.goals = DB.goals.filter(g => g.id !== id);
+  save(); renderGoals();
+}
+function toggleMilestone(gid, idx) {
+  const g = DB.goals.find(g => g.id === gid);
+  if (!g) return;
+  g.milestones[idx].done = !g.milestones[idx].done;
+  save(); renderGoals();
+  if (isGoalComplete(g)) toast('יעד הושלם! 🏆', 'success');
+}
+function renderGoals() {
+  const list = document.getElementById('goalsList');
+  if (!DB.goals.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">🎯</div><div>אין עדיין יעדים. הגדר את הראשון ותתחיל לנוע.</div></div>';
+    return;
+  }
+  const rangeLabels = { day:'יומי', week:'שבועי', month:'חודשי', quarter:'רבעוני', year:'שנתי', life:'חיים' };
+  list.innerHTML = DB.goals.map(g => {
+    const pr = goalProgress(g);
+    return `
+    <div class="goal-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="flex:1">
+          <div class="goal-title">${escapeHtml(g.title)} ${isGoalComplete(g) ? '🏆' : ''}</div>
+          ${g.desc ? `<div class="goal-desc">${escapeHtml(g.desc)}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="background:var(--surface-2);padding:3px 10px;border-radius:10px;font-size:11px">${rangeLabels[g.range]||g.range}</span>
+          ${g.deadline ? `<span style="color:var(--text-dim);font-size:11px">📅 ${g.deadline}</span>` : ''}
+          <button class="btn btn-ghost" style="padding:4px 8px" onclick="deleteGoal('${g.id}')">✕</button>
+        </div>
+      </div>
+      <div class="goal-progress">
+        <div class="goal-progress-text">${pr}% הושלם</div>
+      </div>
+      ${g.milestones.length ? `<div class="goal-milestones">
+        ${g.milestones.map((m,i) => `
+          <div class="milestone">
+            <div class="task-check ${m.done?'checked':''}" onclick="toggleMilestone('${g.id}', ${i})"></div>
+            <span style="${m.done?'text-decoration:line-through;opacity:.5':''}">${escapeHtml(m.text)}</span>
+          </div>`).join('')}
+      </div>` : ''}
+      <div class="progress-bar" style="width:${pr}%"></div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── HABITS ─── */
+function addHabit() {
+  document.getElementById('habitModal').classList.add('show');
+}
+function closeHabitModal() {
+  document.getElementById('habitModal').classList.remove('show');
+}
+function saveHabit() {
+  const name = document.getElementById('habitName').value.trim();
+  if (!name) return;
+  DB.habits.push({
+    id: uid(),
+    name,
+    emoji: document.getElementById('habitEmoji').value.trim() || '✨',
+    log: {},
+    created: Date.now()
+  });
+  save();
+  document.getElementById('habitName').value = '';
+  document.getElementById('habitEmoji').value = '';
+  closeHabitModal();
+  renderHabits();
+}
+function deleteHabit(id) {
+  if (!confirm('למחוק את ההרגל?')) return;
+  DB.habits = DB.habits.filter(h => h.id !== id);
+  save(); renderHabits();
+}
+function toggleHabitDay(hid, key) {
+  const h = DB.habits.find(h => h.id === hid);
+  if (!h) return;
+  if (h.log[key]) delete h.log[key];
+  else h.log[key] = true;
+  save(); renderHabits();
+}
+function habitStreak(h) {
+  let s = 0;
+  const d = new Date();
+  while (h.log[dayKey(d)]) {
+    s++;
+    d.setDate(d.getDate() - 1);
+  }
+  return s;
+}
+function renderHabits() {
+  const list = document.getElementById('habitsList');
+  if (!DB.habits.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">🔥</div><div>הוסף את ההרגל הראשון שלך. הצלחה זה מה שאתה עושה כל יום.</div></div>';
+    return;
+  }
+  const today = new Date();
+  list.innerHTML = DB.habits.map(h => {
+    let cells = '';
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const k = dayKey(d);
+      const done = h.log[k];
+      const isToday = k === todayKey();
+      cells += `<div class="habit-cell ${done?'done':''}"
+                      title="${k}${done?' ✓':''}"
+                      style="${isToday?'box-shadow:0 0 0 2px var(--primary)':''}"
+                      onclick="toggleHabitDay('${h.id}','${k}')"></div>`;
+    }
+    return `
+    <div class="habit-row">
+      <div class="habit-name">${h.emoji} ${escapeHtml(h.name)}
+        <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;float:left" onclick="deleteHabit('${h.id}')">✕</button>
+      </div>
+      <div class="habit-cells">${cells}</div>
+      <div class="habit-streak">🔥 ${habitStreak(h)}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── JOURNAL ─── */
+const prompts = [
+  'מה הדבר הכי חשוב שעשיתי היום?',
+  'איפה איבדתי זמן? איך אמנע ממנו מחר?',
+  'איזה אדם אחד אני יכול להודות לו עליו היום?',
+  'מה למדתי על עצמי השבוע?',
+  'אם היה לי שעה אחת מחר שתעשה הכי גדול הבדל - מה אעשה בה?',
+  'מה הכי הפחיד אותי היום? למה?',
+  'איזה הרגל אני רוצה לשפר השבוע?',
+  'מה הניצחון הקטן של היום?',
+  'איך אני יכול לתת ערך לעצמי או לאחרים מחר?',
+  'מה אני דוחה? למה?',
+];
+let selectedMood = null;
+function renderJournal() {
+  const today = new Date();
+  document.getElementById('journalDate').textContent = today.toLocaleDateString('he-IL', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('journalPrompt').textContent = '💭 ' + prompts[Math.floor(Math.random()*prompts.length)];
+
+  document.getElementById('moodPick').querySelectorAll('.mood').forEach(m => {
+    m.onclick = () => {
+      document.getElementById('moodPick').querySelectorAll('.mood').forEach(x => x.classList.remove('selected'));
+      m.classList.add('selected');
+      selectedMood = +m.dataset.mood;
+    };
+  });
+
+  const history = document.getElementById('journalHistory');
+  if (!DB.journal.length) {
+    history.innerHTML = '<div class="empty"><div class="empty-icon">📔</div><div>הרישומים שלך יופיעו פה</div></div>';
+  } else {
+    const sorted = [...DB.journal].sort((a,b) => b.id.localeCompare(a.id));
+    history.innerHTML = sorted.slice(0, 30).map(j => {
+      const moodE = ['😞','😕','😐','🙂','😄'][j.mood-1] || '';
+      return `<div class="journal-entry">
+        <div class="journal-date">${j.date} ${moodE}
+          <button class="btn btn-ghost" style="margin-right:auto;padding:2px 6px;font-size:11px" onclick="deleteJournal('${j.id}')">✕</button>
+        </div>
+        <div style="white-space:pre-wrap;font-size:13px;line-height:1.6">${escapeHtml(j.text)}</div>
+      </div>`;
+    }).join('');
+  }
+}
+function insertPrompt(t) {
+  const el = document.getElementById('journalText');
+  el.value += (el.value ? '\n\n' : '') + t + ' ';
+  el.focus();
+}
+function saveJournal() {
+  const text = document.getElementById('journalText').value.trim();
+  if (!text) return toast('כתוב משהו קודם 🙂');
+  DB.journal.push({ id: uid(), date: todayKey(), mood: selectedMood, text });
+  save();
+  document.getElementById('journalText').value = '';
+  document.getElementById('moodPick').querySelectorAll('.mood').forEach(x => x.classList.remove('selected'));
+  selectedMood = null;
+  renderJournal();
+  toast('רישום נשמר 📔', 'success');
+}
+function deleteJournal(id) {
+  if (!confirm('למחוק את הרישום?')) return;
+  DB.journal = DB.journal.filter(j => j.id !== id);
+  save(); renderJournal();
+}
+
+/* ─── POMODORO ─── */
+/* timestamp-based timer: doesn't get throttled when the tab is hidden.
+   - while running: endsAt is the target epoch-ms; remaining is derived from Date.now()
+   - while paused: remaining is the stored seconds left
+   - a Web Worker drives the tick (workers run even when the tab is in the background)
+   - on visibilitychange / focus we resync immediately
+   - state persists to localStorage so reload / tab close keeps the session going */
+const POMO_KEY = 'flowmaster_pomo_v1';
+let pomoState = { running:false, mode:'work', duration:25, remaining:25*60, endsAt:null, sessionStart:null, task:'' };
+
+function savePomo() {
+  localStorage.setItem(POMO_KEY, JSON.stringify(pomoState));
+}
+function loadPomo() {
+  try {
+    const raw = localStorage.getItem(POMO_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      pomoState = { ...pomoState, ...s };
+      // sync mode UI
+      const modeEl = document.querySelector(`.pomo-mode[data-mode="${pomoState.mode}"]`);
+      if (modeEl) {
+        document.querySelectorAll('.pomo-mode').forEach(x => x.classList.remove('active'));
+        modeEl.classList.add('active');
+      }
+      if (pomoState.task) document.getElementById('pomoTask').value = pomoState.task;
+      // if we were running, resume — tick() will close it out if endsAt already passed
+      if (pomoState.running && pomoState.endsAt) {
+        startWorker();
+        document.getElementById('pomoStartBtn').innerHTML = '⏸';
+        document.getElementById('pomoLabel').textContent = '🎯 ' + (pomoState.task || 'בתהליך...');
+        tick();
+      }
+    }
+  } catch(e) { console.error('loadPomo', e); }
+}
+
+/* Web Worker drives the tick — workers aren't throttled as aggressively
+   as setInterval in background tabs (and never get throttled below 1Hz). */
+let pomoWorker = null;
+function startWorker() {
+  if (pomoWorker) return;
+  const code = `let id=null;onmessage=e=>{if(e.data==='start'){clearInterval(id);id=setInterval(()=>postMessage('t'),250);}else if(e.data==='stop'){clearInterval(id);id=null;}};`;
+  pomoWorker = new Worker(URL.createObjectURL(new Blob([code], { type:'application/javascript' })));
+  pomoWorker.onmessage = () => tick();
+  pomoWorker.postMessage('start');
+}
+function stopWorker() {
+  if (pomoWorker) { pomoWorker.postMessage('stop'); pomoWorker.terminate(); pomoWorker = null; }
+}
+
+function computeRemaining() {
+  if (pomoState.running && pomoState.endsAt) {
+    return Math.max(0, Math.ceil((pomoState.endsAt - Date.now()) / 1000));
+  }
+  return pomoState.remaining;
+}
+
+function renderPomoTime() {
+  const rem = computeRemaining();
+  const m = Math.floor(rem/60);
+  const s = rem%60;
+  const txt = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.getElementById('pomoTime').textContent = txt;
+  document.getElementById('focusTime').textContent = txt;
+  // ring
+  const total = pomoState.duration * 60;
+  const pct = rem / total;
+  const C = 2 * Math.PI * 140;
+  document.getElementById('pomoCircle').style.strokeDasharray = C;
+  document.getElementById('pomoCircle').style.strokeDashoffset = C * (1 - pct);
+  // tab title shows countdown so you see it even on another tab
+  if (pomoState.running) document.title = `⏱ ${txt} — FlowMaster`;
+  else document.title = 'FlowMaster — מערכת ניהול זמן';
+}
+
+function tick() {
+  if (!pomoState.running) return;
+  const rem = computeRemaining();
+  renderPomoTime();
+  if (rem <= 0) finishPomo();
+}
+
+function togglePomo() {
+  if (pomoState.running) {
+    // pause: freeze remaining
+    pomoState.remaining = computeRemaining();
+    pomoState.running = false;
+    pomoState.endsAt = null;
+    stopWorker();
+    document.getElementById('pomoStartBtn').innerHTML = '▶';
+    document.getElementById('pomoLabel').textContent = 'מושהה — לחץ להמשיך';
+  } else {
+    pomoState.task = document.getElementById('pomoTask').value || '';
+    pomoState.running = true;
+    pomoState.endsAt = Date.now() + pomoState.remaining * 1000;
+    pomoState.sessionStart = pomoState.sessionStart || Date.now();
+    document.getElementById('pomoStartBtn').innerHTML = '⏸';
+    document.getElementById('pomoLabel').textContent = '🎯 ' + (pomoState.task || 'בתהליך...');
+    startWorker();
+  }
+  savePomo();
+  renderPomoTime();
+}
+
+function finishPomo() {
+  stopWorker();
+  pomoState.running = false;
+  pomoState.endsAt = null;
+  document.getElementById('pomoStartBtn').innerHTML = '▶';
+  document.getElementById('pomoLabel').textContent = '✓ הסתיים!';
+  // record only work sessions
+  if (pomoState.mode === 'work' || pomoState.mode === 'deep') {
+    DB.pomos.push({
+      id: uid(),
+      mode: pomoState.mode,
+      task: pomoState.task || document.getElementById('pomoTask').value || '',
+      completedAt: Date.now(),
+      duration: pomoState.duration
+    });
+    save();
+    toast('🎉 סשן הושלם! קח הפסקה.', 'success');
+    notifyMe('Pomodoro Done', 'הסשן הסתיים. הגיע הזמן להפסקה.');
+    playChime();
+    updateStreak();
+  } else {
+    toast('🌱 הפסקה הסתיימה!', 'success');
+    playChime();
+  }
+  pomoState.remaining = pomoState.duration * 60;
+  pomoState.sessionStart = null;
+  savePomo();
+  renderPomoTime();
+  renderPomoStats();
+}
+
+function resetPomo() {
+  stopWorker();
+  pomoState.running = false;
+  pomoState.endsAt = null;
+  pomoState.remaining = pomoState.duration * 60;
+  pomoState.sessionStart = null;
+  document.getElementById('pomoStartBtn').innerHTML = '▶';
+  document.getElementById('pomoLabel').textContent = 'מוכן להתחיל?';
+  savePomo();
+  renderPomoTime();
+}
+
+/* play a short chime — works even if tab is in background (after first user interaction) */
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1108, 1318].forEach((freq, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.frequency.value = freq;
+      o.type = 'sine';
+      o.connect(g); g.connect(ctx.destination);
+      const t = ctx.currentTime + i * 0.18;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.3, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      o.start(t); o.stop(t + 0.55);
+    });
+  } catch(e) {}
+}
+
+/* resync the moment the tab becomes visible again — closes the gap if the worker
+   was throttled or the OS suspended the page */
+document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+window.addEventListener('focus', tick);
+window.addEventListener('pageshow', tick);
+document.querySelectorAll('.pomo-mode').forEach(m => {
+  m.onclick = () => {
+    if (pomoState.running && !confirm('הסשן הנוכחי יאופס. להמשיך?')) return;
+    document.querySelectorAll('.pomo-mode').forEach(x => x.classList.remove('active'));
+    m.classList.add('active');
+    pomoState.mode = m.dataset.mode;
+    pomoState.duration = +m.dataset.duration;
+    resetPomo();
+  };
+});
+function renderPomoStats() {
+  const today = todayKey();
+  const todayPomos = DB.pomos.filter(p => dayKey(p.completedAt) === today);
+  const now = new Date();
+  const month = now.getMonth(), year = now.getFullYear();
+  const monthPomos = DB.pomos.filter(p => { const d = new Date(p.completedAt); return d.getMonth() === month && d.getFullYear() === year; });
+  document.getElementById('pomoToday').textContent = todayPomos.length;
+  document.getElementById('pomoTotal').textContent = DB.pomos.length;
+  document.getElementById('pomoMins').textContent = monthPomos.reduce((s,p) => s + p.duration, 0);
+}
+function enterFocusMode() {
+  document.getElementById('focusMode').classList.add('show');
+  document.getElementById('focusTaskName').textContent = document.getElementById('pomoTask').value || 'מיקוד עמוק';
+  if (!pomoState.running) togglePomo();
+}
+function exitFocusMode() {
+  document.getElementById('focusMode').classList.remove('show');
+}
+
+/* ─── TIME BLOCKS ─── */
+function renderCalendar() {
+  const today = new Date();
+  document.getElementById('todayDate').textContent = today.toLocaleDateString('he-IL', { weekday:'long', day:'numeric', month:'long' });
+  const k = todayKey();
+  const blocks = DB.timeBlocks[k] || [];
+  const sched = document.getElementById('daySchedule');
+  let html = '';
+  for (let h = 6; h <= 23; h++) {
+    html += `<div class="hour-label">${String(h).padStart(2,'0')}:00</div>`;
+    const hourBlocks = blocks.filter(b => parseInt(b.start) === h);
+    html += `<div class="hour-slot" onclick="quickBlock(${h})">`;
+    hourBlocks.forEach(b => {
+      html += `<div class="time-block" onclick="event.stopPropagation();removeBlock('${k}', '${b.id}')" title="לחץ למחיקה">⏱ ${b.start}–${b.end} · ${escapeHtml(b.title)}</div>`;
+    });
+    html += `</div>`;
+  }
+  sched.innerHTML = html;
+}
+function quickBlock(h) {
+  document.getElementById('blockStart').value = String(h).padStart(2,'0') + ':00';
+  document.getElementById('blockEnd').value = String(h+1).padStart(2,'0') + ':00';
+  document.getElementById('blockTitle').value = '';
+  document.getElementById('blockModal').classList.add('show');
+}
+function addTimeBlock() {
+  document.getElementById('blockStart').value = '09:00';
+  document.getElementById('blockEnd').value = '10:00';
+  document.getElementById('blockTitle').value = '';
+  document.getElementById('blockModal').classList.add('show');
+}
+function closeBlockModal() {
+  document.getElementById('blockModal').classList.remove('show');
+}
+function saveBlock() {
+  const title = document.getElementById('blockTitle').value.trim();
+  const start = document.getElementById('blockStart').value;
+  const end = document.getElementById('blockEnd').value;
+  if (!title || !start || !end) return toast('מלא את כל השדות');
+  const k = todayKey();
+  DB.timeBlocks[k] = DB.timeBlocks[k] || [];
+  DB.timeBlocks[k].push({ id: uid(), title, start, end });
+  save(); closeBlockModal(); renderCalendar();
+  toast('בלוק זמן נוסף 📅', 'success');
+}
+function removeBlock(k, id) {
+  if (!confirm('למחוק את הבלוק?')) return;
+  DB.timeBlocks[k] = (DB.timeBlocks[k]||[]).filter(b => b.id !== id);
+  save(); renderCalendar();
+}
+
+/* ─── DASHBOARD ─── */
+function getHourGreeting() {
+  const h = new Date().getHours();
+  if (h < 6) return 'לילה טוב';
+  if (h < 12) return 'בוקר טוב';
+  if (h < 17) return 'צהריים טובים';
+  if (h < 20) return 'אחר צהריים נעים';
+  return 'ערב טוב';
+}
+const tips = [
+  { t: 'כלל ה־2 דקות', d: 'אם משהו לוקח פחות מ-2 דקות — תעשה אותו עכשיו.' },
+  { t: 'עבודה עמוקה > עבודה ממהרת', d: 'שעה בלי הסחות שווה 3 שעות מקוטעות.' },
+  { t: 'תכנן הלילה לפני', d: 'הבוקר שלך נקבע בלילה. הגדר את 3 המשימות לפני שאתה ישן.' },
+  { t: 'אל תפתח את הפלאפון ב־30 דקות הראשונות', d: 'תן למוח שלך הזדמנות להתחיל לחשוב, לא לתגובה.' },
+  { t: 'איכות > כמות', d: 'אחת שהושלמה מאה אחוז עדיפה על חמש שעשו 80%.' },
+  { t: 'המשימה הקשה — ראשונה', d: 'אכול את הצפרדע. הצלחה מוקדמת יוצרת מומנטום.' },
+  { t: 'עצור לפני שאתה עייף', d: 'הפסקה זה לא חולשה. זה אסטרטגיה.' },
+  { t: 'מדוד מה שחשוב', d: 'מה שלא נמדד — לא משתפר. תעקוב.' },
+  { t: 'ה-Why שלך', d: 'תזכיר לעצמך כל יום למה אתה עושה את מה שאתה עושה.' },
+  { t: 'אמירת לא היא מתנה', d: 'כל "כן" למשהו זה "לא" לכל היתר.' },
+];
+function renderDashboard() {
+  document.getElementById('greeting').textContent = getHourGreeting() + ' 👋';
+  document.getElementById('dateSubtitle').textContent = new Date().toLocaleDateString('he-IL', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  const tip = tips[new Date().getDate() % tips.length];
+  document.getElementById('tipTitle').textContent = tip.t;
+  document.getElementById('tipText').textContent = tip.d;
+
+  // stats
+  const today = todayKey();
+  const doneToday = DB.tasks.filter(t => t.done && t.completedAt && dayKey(t.completedAt) === today).length;
+  const yesterday = dayKey(new Date(Date.now() - 864e5));
+  const doneYest = DB.tasks.filter(t => t.done && t.completedAt && dayKey(t.completedAt) === yesterday).length;
+  document.getElementById('statDone').textContent = doneToday;
+  const diff = doneToday - doneYest;
+  const trEl = document.getElementById('statDoneTrend');
+  trEl.textContent = (diff >= 0 ? '+' : '') + diff + ' מאתמול';
+  trEl.className = 'stat-trend' + (diff < 0 ? ' down' : '');
+
+  const pomoToday = DB.pomos.filter(p => dayKey(p.completedAt) === today);
+  document.getElementById('statPomo').textContent = pomoToday.length;
+  document.getElementById('statPomoMins').textContent = pomoToday.reduce((s,p)=>s+p.duration,0);
+
+  document.getElementById('statHabits').textContent = DB.habits.length;
+  document.getElementById('statHabitsDone').textContent = DB.habits.filter(h => h.log[today]).length;
+
+  // productivity score
+  let score = 0;
+  score += Math.min(doneToday * 8, 40);
+  score += Math.min(pomoToday.length * 6, 30);
+  const habitsDone = DB.habits.filter(h => h.log[today]).length;
+  const habitPct = DB.habits.length ? habitsDone / DB.habits.length : 0;
+  score += Math.round(habitPct * 20);
+  if (DB.journal.find(j => j.date === today)) score += 10;
+  score = Math.min(score, 100);
+  document.getElementById('statScore').textContent = score;
+
+  // top tasks
+  const topTasks = DB.tasks.filter(t => !t.done && t.q === 'q1').slice(0, 5);
+  const topQ2 = DB.tasks.filter(t => !t.done && t.q === 'q2').slice(0, 3);
+  const top = [...topTasks, ...topQ2].slice(0, 6);
+  const tt = document.getElementById('dashTopTasks');
+  if (!top.length) tt.innerHTML = '<div class="empty"><div style="opacity:.4">✨</div><div style="font-size:12px;color:var(--text-muted)">אין משימות דחופות. נצל את הזמן להתעדפות!</div></div>';
+  else tt.innerHTML = top.map(t => `
+    <div class="task" style="cursor:pointer" onclick="toggleTask('${t.id}')">
+      <div class="task-check"></div>
+      <div class="task-body">
+        <div class="task-text">${escapeHtml(t.text)}</div>
+        ${t.q === 'q1' ? '<div class="task-meta"><span class="task-tag" style="background:var(--danger);color:white">🔥 דחוף+חשוב</span></div>' : '<div class="task-meta"><span class="task-tag" style="background:var(--success);color:white">⭐ חשוב</span></div>'}
+      </div>
+    </div>`).join('');
+
+  // dash goals
+  const dg = document.getElementById('dashGoals');
+  const activeGoals = DB.goals.filter(g => !isGoalComplete(g)).slice(0, 3);
+  if (!activeGoals.length) dg.innerHTML = '<div class="empty"><div style="font-size:30px;opacity:.4">🎯</div><div style="color:var(--text-muted);font-size:13px">הגדר את היעד הראשון שלך</div></div>';
+  else dg.innerHTML = activeGoals.map(g => {
+    const pr = goalProgress(g);
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+        <span>${escapeHtml(g.title)}</span>
+        <span style="color:var(--text-dim)">${pr}%</span>
+      </div>
+      <div style="height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${pr}%;background:linear-gradient(90deg,var(--primary),var(--purple),var(--pink));transition:width .4s"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // weekly overview
+  const wk = document.getElementById('weeklyOverview');
+  let weekHtml = '';
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const k = dayKey(d);
+    const dayDone = DB.tasks.filter(t => t.done && t.completedAt && dayKey(t.completedAt) === k).length;
+    const dayPomo = DB.pomos.filter(p => dayKey(p.completedAt) === k).length;
+    const isToday = k === today;
+    const dots = Math.min(dayDone + dayPomo, 5);
+    weekHtml += `<div class="day-cell ${isToday?'today':''}">
+      <div class="day-name">${['א','ב','ג','ד','ה','ו','ש'][d.getDay()]}</div>
+      <div class="day-num">${d.getDate()}</div>
+      <div class="day-dots">${Array(dots).fill('<div class="day-dot"></div>').join('')}</div>
+    </div>`;
+  }
+  wk.innerHTML = weekHtml;
+  document.getElementById('streakDays').textContent = DB.settings.streak || 0;
+}
+
+/* ─── ANALYTICS ─── */
+function renderAnalytics() {
+  const now = new Date();
+  const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+
+  const weekTasks = DB.tasks.filter(t => t.done && t.completedAt && t.completedAt > weekAgo.getTime()).length;
+  const weekPomo = DB.pomos.filter(p => p.completedAt > weekAgo.getTime()).length;
+  document.getElementById('anWeekTasks').textContent = weekTasks;
+  document.getElementById('anWeekPomo').textContent = weekPomo;
+
+  // avg score is rough estimate based on last 7 days
+  let totalScore = 0, days = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const k = dayKey(d);
+    let s = 0;
+    s += Math.min(DB.tasks.filter(t => t.done && dayKey(t.completedAt||0) === k).length * 8, 40);
+    s += Math.min(DB.pomos.filter(p => dayKey(p.completedAt) === k).length * 6, 30);
+    const habitsDone = DB.habits.filter(h => h.log[k]).length;
+    s += DB.habits.length ? Math.round(habitsDone / DB.habits.length * 20) : 0;
+    if (DB.journal.find(j => j.date === k)) s += 10;
+    totalScore += Math.min(s, 100);
+    days++;
+  }
+  document.getElementById('anAvgScore').textContent = Math.round(totalScore / days);
+
+  // chart
+  const chart = document.getElementById('chartTasks');
+  let bars = [];
+  let max = 1;
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const k = dayKey(d);
+    const count = DB.tasks.filter(t => t.done && dayKey(t.completedAt||0) === k).length;
+    if (count > max) max = count;
+    bars.push({ count, label: d.getDate() + '/' + (d.getMonth()+1) });
+  }
+  chart.innerHTML = bars.map(b => `
+    <div class="bar-col">
+      <div class="bar" style="height:${(b.count / max) * 180}px" title="${b.count} משימות"></div>
+      <div class="bar-label">${b.label}</div>
+    </div>`).join('');
+
+  // quad stats
+  const qs = ['q1','q2','q3','q4'].map(q => {
+    const all = DB.tasks.filter(t => t.q === q);
+    const done = all.filter(t => t.done).length;
+    return { q, total: all.length, done };
+  });
+  const labels = { q1: '🔥 דחוף+חשוב', q2: '⭐ חשוב', q3: '⚡ דחוף', q4: '🗑 שני שלילי' };
+  document.getElementById('quadStats').innerHTML = qs.map(s => `
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+        <span>${labels[s.q]}</span>
+        <span style="color:var(--text-dim)">${s.done}/${s.total}</span>
+      </div>
+      <div style="height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${s.total?s.done/s.total*100:0}%;background:linear-gradient(90deg,var(--primary),var(--pink))"></div>
+      </div>
+    </div>`).join('');
+
+  // insights
+  const insights = generateInsights();
+  document.getElementById('insights').innerHTML = insights.map(i => `
+    <div style="padding:10px;background:var(--surface-2);border-radius:8px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start">
+      <span style="font-size:18px">${i.icon}</span>
+      <div style="font-size:13px;line-height:1.5">${i.text}</div>
+    </div>`).join('') || '<div class="empty"><div style="opacity:.5">צריך יותר נתונים…</div></div>';
+}
+function generateInsights() {
+  const out = [];
+  // Best day
+  const dayCounts = {};
+  DB.tasks.filter(t => t.done && t.completedAt).forEach(t => {
+    const day = new Date(t.completedAt).getDay();
+    dayCounts[day] = (dayCounts[day] || 0) + 1;
+  });
+  if (Object.keys(dayCounts).length) {
+    const bestDay = +Object.entries(dayCounts).sort((a,b) => b[1]-a[1])[0][0];
+    out.push({ icon:'📅', text:`היום הכי פרודקטיבי שלך הוא <strong>יום ${['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][bestDay]}</strong>` });
+  }
+  // Best hour
+  const hourCounts = {};
+  DB.pomos.forEach(p => {
+    const h = new Date(p.completedAt).getHours();
+    hourCounts[h] = (hourCounts[h] || 0) + 1;
+  });
+  if (Object.keys(hourCounts).length) {
+    const bestHour = +Object.entries(hourCounts).sort((a,b) => b[1]-a[1])[0][0];
+    out.push({ icon:'⏰', text:`שעת המיקוד הכי טובה שלך: <strong>${bestHour}:00</strong>` });
+  }
+  // Q1 vs Q2 ratio
+  const q1 = DB.tasks.filter(t => t.q === 'q1').length;
+  const q2 = DB.tasks.filter(t => t.q === 'q2').length;
+  if (q1 + q2 >= 5) {
+    if (q1 > q2 * 1.5) out.push({ icon:'⚠️', text:'אתה מבלה הרבה זמן ב<strong>כיבוי שריפות</strong>. תקדיש זמן ל-Q2 כדי לצמצם משברים עתידיים.' });
+    else if (q2 > q1) out.push({ icon:'💎', text:'יחס Q2/Q1 שלך מצוין — אתה משקיע בחשוב לפני שזה הופך לדחוף.' });
+  }
+  // Streak
+  if ((DB.settings.streak || 0) >= 3) out.push({ icon:'🔥', text:`רצף של <strong>${DB.settings.streak} ימים</strong> פרודקטיביים. אל תשבור אותו.` });
+  // Journal
+  const journalCount = DB.journal.length;
+  if (journalCount >= 7) out.push({ icon:'📔', text:`כתבת <strong>${journalCount} רישומים</strong>. רפלקציה היא משכפלת תוצאות.` });
+  // Pomodoros
+  const totalPomo = DB.pomos.length;
+  if (totalPomo >= 20) out.push({ icon:'🍅', text:`<strong>${totalPomo} סשני פומודורו</strong>! זו השקעה של ${Math.round(totalPomo*25/60)} שעות עבודה ממוקדת.` });
+  return out;
+}
+
+/* ─── STREAK ─── */
+function updateStreak() {
+  const today = todayKey();
+  if (DB.settings.lastActive === today) return;
+  const yesterday = dayKey(new Date(Date.now() - 864e5));
+  if (DB.settings.lastActive === yesterday) DB.settings.streak = (DB.settings.streak || 0) + 1;
+  else if (DB.settings.lastActive !== today) DB.settings.streak = 1;
+  DB.settings.lastActive = today;
+  save();
+  document.getElementById('streakDays').textContent = DB.settings.streak;
+}
+
+/* ─── DAILY REVIEW ─── */
+function dailyReview() {
+  const three = prompt('כתוב את 3 המשימות הכי חשובות להיום, מופרדות בנקודה (.)\n\nאם רק תעשה אותן — היום מצליח.');
+  if (!three) return;
+  const items = three.split('.').map(s => s.trim()).filter(Boolean).slice(0,3);
+  items.forEach(text => {
+    DB.tasks.push({ id: uid(), text, q: 'q1', done:false, tag:'יעד יומי', created: Date.now() });
+  });
+  save();
+  toast(`${items.length} משימות נוספו למשבצת "דחוף+חשוב" 🎯`, 'success');
+  switchView('tasks');
+}
+
+/* ─── EXPORT / IMPORT ─── */
+function exportData() {
+  const blob = new Blob([JSON.stringify(DB, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `flowmaster-backup-${todayKey()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('הנתונים יוצאו בהצלחה ⬇', 'success');
+}
+function importData() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json';
+  inp.onchange = () => {
+    const f = inp.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const data = JSON.parse(r.result);
+        if (!confirm('זה ידרוס את הנתונים הקיימים. להמשיך?')) return;
+        DB = { ...DB, ...data };
+        save();
+        renderDashboard(); renderTasks(); renderGoals(); renderHabits(); renderJournal();
+        toast('הנתונים יובאו בהצלחה ✓', 'success');
+      } catch(e) { toast('קובץ לא תקין', 'danger'); }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+/* ─── SEARCH ─── */
+document.getElementById('searchBox').addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase();
+  if (!q) return;
+  // simple: highlight matching tasks
+});
+
+/* ─── NOTIFICATIONS ─── */
+function notifyMe(title, body) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') new Notification(title, { body });
+  else if (Notification.permission !== 'denied') Notification.requestPermission();
+}
+
+/* ─── KEYBOARD SHORTCUTS ─── */
+document.addEventListener('keydown', e => {
+  // skip if typing in inputs
+  if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show'));
+    }
+    return;
+  }
+  if (e.ctrlKey && e.key === 'k') { e.preventDefault(); document.getElementById('searchBox').focus(); }
+  else if (e.key === 'q' || e.key === '/') { e.preventDefault(); openQuickAdd(); }
+  else if (e.key === '1') switchView('dashboard');
+  else if (e.key === '2') switchView('tasks');
+  else if (e.key === '3') switchView('calendar');
+  else if (e.key === '4') switchView('pomodoro');
+  else if (e.key === '5') switchView('goals');
+  else if (e.key === '6') switchView('habits');
+  else if (e.key === '7') switchView('journal');
+  else if (e.key === '8') switchView('analytics');
+  else if (e.key === ' ' && document.getElementById('view-pomodoro').classList.contains('active')) {
+    e.preventDefault(); togglePomo();
+  } else if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show'));
+    if (document.getElementById('focusMode').classList.contains('show')) exitFocusMode();
+  }
+});
+
+/* ─── HELPERS ─── */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+/* ─── BOOT ─── */
+load();
+if (DB.settings.theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+updateStreak();
+renderDashboard();
+renderTasks();
+renderPomoTime();
+loadPomo();
+updateBadges();
+if (Notification && Notification.permission === 'default') {
+  // ask later, not on first load
+}
+
+// auto-refresh dashboard every minute
+setInterval(() => {
+  if (document.getElementById('view-dashboard').classList.contains('active')) renderDashboard();
+}, 60000);
+</script>
+</body>
+</html>
