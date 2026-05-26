@@ -446,30 +446,110 @@ textarea.journal-text {
   color: var(--text-dim);
 }
 
-/* ─── CALENDAR ─── */
+/* ─── CALENDAR — Google-Calendar-style ─── */
 .day-schedule {
-  display: grid; grid-template-columns: 60px 1fr;
-  gap: 0; max-height: calc(100vh - 200px); overflow-y: auto;
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  position: relative;
+}
+.time-col {
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  right: 0;
+  background: var(--surface);
+  z-index: 5;
 }
 .hour-label {
-  color: var(--text-muted); font-size: 12px;
-  padding: 8px 4px; text-align: center;
-  border-bottom: 1px solid var(--border);
+  height: 60px;
+  color: var(--text-muted);
+  font-size: 11px;
+  padding-top: 2px;
+  text-align: center;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
-.hour-slot {
-  border-bottom: 1px solid var(--border);
+.events-col {
+  position: relative;
   border-right: 1px solid var(--border);
-  min-height: 50px;
-  padding: 4px; cursor: pointer;
+}
+.hour-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 30px;
+  cursor: pointer;
   transition: background .15s;
+  z-index: 1;
 }
-.hour-slot:hover { background: var(--surface-2); }
+.hour-line.full { border-top: 1px solid var(--border); }
+.hour-line.half { border-top: 1px dashed var(--border); opacity: .55; }
+.hour-line:hover { background: var(--surface-2); }
+.now-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--danger);
+  z-index: 4;
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(239,68,68,0.6);
+}
+.now-line::before {
+  content: '';
+  position: absolute;
+  right: -5px; top: -4px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.25);
+}
 .time-block {
+  position: absolute;
   background: linear-gradient(135deg, var(--primary), var(--purple));
-  color: white; padding: 6px 10px;
-  border-radius: var(--radius-sm); margin-bottom: 2px;
-  font-size: 12px; font-weight: 500;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  cursor: pointer;
+  z-index: 2;
+  transition: transform .15s, box-shadow .15s, z-index 0s;
+  border: 1px solid rgba(255,255,255,0.12);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
+.time-block:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  z-index: 3;
+}
+.time-block .tb-title {
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.time-block .tb-time {
+  font-size: 10px;
+  opacity: 0.88;
+  margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.time-block.compact { padding: 2px 8px; }
+.time-block.compact .tb-time { display: none; }
+.time-block.color-0 { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+.time-block.color-1 { background: linear-gradient(135deg, #10b981, #059669); }
+.time-block.color-2 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.time-block.color-3 { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+.time-block.color-4 { background: linear-gradient(135deg, #06b6d4, #0e7490); }
+.time-block.color-5 { background: linear-gradient(135deg, #ec4899, #be185d); }
 
 /* ─── ANALYTICS ─── */
 .chart-bar {
@@ -715,10 +795,11 @@ select.task-priority {
   .habit-streak { text-align: right; font-size: 16px; }
 
   /* Calendar */
-  .day-schedule { max-height: 60vh; }
-  .hour-label { font-size: 11px; padding: 6px 2px; }
-  .hour-slot { min-height: 56px; }
-  .time-block { font-size: 11px; padding: 8px; }
+  .day-schedule { max-height: 65vh; grid-template-columns: 46px 1fr; }
+  .hour-label { font-size: 10px; }
+  .time-block { font-size: 11px; }
+  .time-block .tb-title { font-size: 11px; }
+  .time-block .tb-time { font-size: 9px; }
 
   /* Dashboard */
   .greeting { font-size: 22px; }
@@ -1394,7 +1475,7 @@ function switchView(view) {
   // refresh data of that view
   if (view === 'dashboard') renderDashboard();
   if (view === 'tasks') renderTasks();
-  if (view === 'calendar') renderCalendar();
+  if (view === 'calendar') { _calScrolled = false; renderCalendar(); }
   if (view === 'pomodoro') renderPomoStats();
   if (view === 'goals') renderGoals();
   if (view === 'habits') renderHabits();
@@ -1953,29 +2034,146 @@ function exitFocusMode() {
   document.getElementById('focusMode').classList.remove('show');
 }
 
-/* ─── TIME BLOCKS ─── */
+/* ─── TIME BLOCKS — Google-Calendar style ─── */
+const CAL_START_HOUR = 6;
+const CAL_END_HOUR = 23;
+const CAL_HOUR_HEIGHT = 60; // px per hour
+let _calScrolled = false;   // auto-scroll to "now" only once per view
+
+function timeToMin(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+function minToTimeStr(min) {
+  const h = Math.floor(min / 60), m = min % 60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+}
+
 function renderCalendar() {
   const today = new Date();
   document.getElementById('todayDate').textContent = today.toLocaleDateString('he-IL', { weekday:'long', day:'numeric', month:'long' });
   const k = todayKey();
   const blocks = DB.timeBlocks[k] || [];
   const sched = document.getElementById('daySchedule');
-  let html = '';
-  for (let h = 6; h <= 23; h++) {
-    html += `<div class="hour-label">${String(h).padStart(2,'0')}:00</div>`;
-    const hourBlocks = blocks.filter(b => parseInt(b.start) === h);
-    html += `<div class="hour-slot" onclick="quickBlock(${h})">`;
-    hourBlocks.forEach(b => {
-      html += `<div class="time-block" onclick="event.stopPropagation();removeBlock('${k}', '${b.id}')" title="לחץ למחיקה">⏱ ${b.start}–${b.end} · ${escapeHtml(b.title)}</div>`;
-    });
-    html += `</div>`;
+
+  const totalHours = CAL_END_HOUR - CAL_START_HOUR + 1;
+  const totalHeight = totalHours * CAL_HOUR_HEIGHT;
+  const pxPerMin = CAL_HOUR_HEIGHT / 60;
+
+  // 1) time column (just labels)
+  let timeColHtml = '';
+  for (let h = CAL_START_HOUR; h <= CAL_END_HOUR; h++) {
+    timeColHtml += `<div class="hour-label">${String(h).padStart(2,'0')}:00</div>`;
   }
-  sched.innerHTML = html;
+
+  // 2) clickable hour/half-hour grid lines (snap to 30-min)
+  let linesHtml = '';
+  for (let h = CAL_START_HOUR; h <= CAL_END_HOUR; h++) {
+    const baseTop = (h - CAL_START_HOUR) * CAL_HOUR_HEIGHT;
+    linesHtml += `<div class="hour-line full" style="top:${baseTop}px" onclick="quickBlock(${h},0)"></div>`;
+    linesHtml += `<div class="hour-line half" style="top:${baseTop + 30}px" onclick="quickBlock(${h},30)"></div>`;
+  }
+
+  // 3) parse + sort blocks, clamp to view
+  const parsed = blocks.map(b => {
+    const sMin = Math.max(0, timeToMin(b.start) - CAL_START_HOUR * 60);
+    const eMin = Math.min(totalHours * 60, timeToMin(b.end) - CAL_START_HOUR * 60);
+    return { ...b, sMin, eMin };
+  })
+  .filter(b => b.eMin > b.sMin)
+  .sort((a,b) => a.sMin - b.sMin || a.eMin - b.eMin);
+
+  // 4) greedy column-packing for overlapping blocks
+  const colEnds = []; // colEnds[i] = endMin of last block in column i
+  parsed.forEach(b => {
+    let placed = false;
+    for (let i = 0; i < colEnds.length; i++) {
+      if (colEnds[i] <= b.sMin) {
+        colEnds[i] = b.eMin;
+        b._col = i;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) { colEnds.push(b.eMin); b._col = colEnds.length - 1; }
+  });
+
+  // For each block, find max simultaneous columns across its time range
+  parsed.forEach(b => {
+    let maxCols = 1;
+    parsed.forEach(c => {
+      if (c.sMin < b.eMin && c.eMin > b.sMin) {
+        maxCols = Math.max(maxCols, c._col + 1);
+      }
+    });
+    b._totalCols = maxCols;
+  });
+
+  // 5) render blocks
+  const blockHtml = parsed.map(b => {
+    const top = b.sMin * pxPerMin;
+    const rawHeight = (b.eMin - b.sMin) * pxPerMin;
+    const height = Math.max(22, rawHeight - 2);
+    const compact = rawHeight < 40 ? 'compact' : '';
+    const totalCols = b._totalCols;
+    const colWidth = `calc((100% - 14px) / ${totalCols})`;
+    const rightOffset = `calc(7px + ${b._col} * (100% - 14px) / ${totalCols})`;
+    // stable color per block id (hash → 0–5)
+    let hash = 0;
+    for (let i = 0; i < b.id.length; i++) hash = (hash * 31 + b.id.charCodeAt(i)) >>> 0;
+    const colorClass = `color-${hash % 6}`;
+    return `<div class="time-block ${colorClass} ${compact}"
+              style="top:${top}px;height:${height}px;width:${colWidth};right:${rightOffset};left:auto"
+              onclick="event.stopPropagation();editBlock('${k}','${b.id}')"
+              title="${escapeHtml(b.title)} · ${b.start}–${b.end}">
+      <div class="tb-title">${escapeHtml(b.title)}</div>
+      <div class="tb-time">⏱ ${b.start}–${b.end}</div>
+    </div>`;
+  }).join('');
+
+  // 6) "now" line (only when viewing today)
+  const isToday = k === todayKey();
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes() - CAL_START_HOUR * 60;
+  const showNow = isToday && nowMin >= 0 && nowMin <= totalHours * 60;
+  const nowHtml = showNow ? `<div class="now-line" style="top:${nowMin * pxPerMin}px"></div>` : '';
+
+  sched.innerHTML = `
+    <div class="time-col">${timeColHtml}</div>
+    <div class="events-col" style="height:${totalHeight}px">
+      ${linesHtml}
+      ${nowHtml}
+      ${blockHtml}
+    </div>`;
+
+  // 7) auto-scroll to current time (once per view entry)
+  if (showNow && !_calScrolled) {
+    sched.scrollTop = Math.max(0, nowMin * pxPerMin - 140);
+    _calScrolled = true;
+  }
 }
-function quickBlock(h) {
-  document.getElementById('blockStart').value = String(h).padStart(2,'0') + ':00';
-  document.getElementById('blockEnd').value = String(h+1).padStart(2,'0') + ':00';
+
+function quickBlock(h, m = 0) {
+  const startMin = h * 60 + m;
+  const endMin = startMin + 60;
+  document.getElementById('blockStart').value = minToTimeStr(startMin);
+  document.getElementById('blockEnd').value = minToTimeStr(Math.min(endMin, 24*60 - 1));
   document.getElementById('blockTitle').value = '';
+  document.getElementById('blockModal').dataset.editId = '';
+  document.getElementById('blockModal').classList.add('show');
+  setTimeout(() => document.getElementById('blockTitle').focus(), 50);
+}
+
+function editBlock(dayKeyStr, id) {
+  const b = (DB.timeBlocks[dayKeyStr]||[]).find(x => x.id === id);
+  if (!b) return;
+  const action = prompt(`"${b.title}" (${b.start}–${b.end})\n\n1 — ערוך\n2 — מחק\n\nבחר 1 או 2 (Enter לביטול):`);
+  if (action === '2') { removeBlock(dayKeyStr, id); return; }
+  if (action !== '1') return;
+  document.getElementById('blockStart').value = b.start;
+  document.getElementById('blockEnd').value = b.end;
+  document.getElementById('blockTitle').value = b.title;
+  document.getElementById('blockModal').dataset.editId = id;
   document.getElementById('blockModal').classList.add('show');
 }
 function addTimeBlock() {
@@ -1992,11 +2190,19 @@ function saveBlock() {
   const start = document.getElementById('blockStart').value;
   const end = document.getElementById('blockEnd').value;
   if (!title || !start || !end) return toast('מלא את כל השדות');
+  if (timeToMin(end) <= timeToMin(start)) return toast('שעת הסיום חייבת להיות אחרי שעת ההתחלה');
   const k = todayKey();
   DB.timeBlocks[k] = DB.timeBlocks[k] || [];
-  DB.timeBlocks[k].push({ id: uid(), title, start, end });
+  const editId = document.getElementById('blockModal').dataset.editId;
+  if (editId) {
+    const b = DB.timeBlocks[k].find(x => x.id === editId);
+    if (b) { b.title = title; b.start = start; b.end = end; }
+    toast('בלוק עודכן ✓', 'success');
+  } else {
+    DB.timeBlocks[k].push({ id: uid(), title, start, end });
+    toast('בלוק זמן נוסף 📅', 'success');
+  }
   save(); closeBlockModal(); renderCalendar();
-  toast('בלוק זמן נוסף 📅', 'success');
 }
 function removeBlock(k, id) {
   if (!confirm('למחוק את הבלוק?')) return;
@@ -2338,9 +2544,16 @@ if (Notification && Notification.permission === 'default') {
   // ask later, not on first load
 }
 
-// auto-refresh dashboard every minute
+// auto-refresh dashboard + calendar every minute (moves the "now" line)
 setInterval(() => {
   if (document.getElementById('view-dashboard').classList.contains('active')) renderDashboard();
+  if (document.getElementById('view-calendar').classList.contains('active')) {
+    // re-render but preserve scroll position
+    const sched = document.getElementById('daySchedule');
+    const prevScroll = sched ? sched.scrollTop : 0;
+    renderCalendar();
+    if (sched) sched.scrollTop = prevScroll;
+  }
 }, 60000);
 </script>
 </body>
