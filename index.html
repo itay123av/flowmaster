@@ -349,28 +349,115 @@ body {
 }
 .pomo-mode.active { background: var(--surface); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 
-/* ─── HABITS ─── */
-.habit-row {
-  display: grid;
-  grid-template-columns: 200px 1fr 80px;
-  gap: 10px; align-items: center;
-  padding: 10px 14px;
+/* ─── HABITS (card design, one-tap-per-day) ─── */
+.habit-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+  transition: transform .15s, border-color .15s;
+}
+.habit-card:hover { border-color: var(--primary); }
+.habit-card.done-today::before,
+.habit-card.at-risk::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.habit-card.done-today::before { background: linear-gradient(90deg, var(--success), var(--info)); }
+.habit-card.at-risk::before    { background: linear-gradient(90deg, var(--warning), var(--danger)); }
+.habit-header {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 16px;
+}
+.habit-icon-big {
+  width: 52px; height: 52px;
   background: var(--surface-2);
-  border-radius: var(--radius-sm);
-  margin-bottom: 6px;
+  border-radius: 14px;
+  display: grid; place-items: center;
+  font-size: 26px; flex-shrink: 0;
 }
-.habit-name { font-weight: 600; }
-.habit-cells { display: grid; grid-template-columns: repeat(30, 1fr); gap: 3px; }
-.habit-cell {
-  aspect-ratio: 1;
-  background: var(--bg);
-  border-radius: 3px;
+.habit-info { flex: 1; min-width: 0; }
+.habit-title { font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+.habit-meta { font-size: 12px; color: var(--text-dim); }
+.habit-flame {
+  display: flex; flex-direction: column; align-items: center;
+  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(239,68,68,0.15));
+  border: 1px solid rgba(245,158,11,0.3);
+  padding: 8px 14px; border-radius: 12px; min-width: 70px;
+}
+.flame-num {
+  font-size: 22px; font-weight: 800; color: var(--warning); line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.flame-label { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+.habit-action-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  border: none; color: white;
+  padding: 18px; border-radius: 14px;
+  font-family: inherit; font-weight: 700; font-size: 16px;
   cursor: pointer;
+  box-shadow: 0 6px 20px rgba(99,102,241,0.25);
   transition: all .15s;
+  position: relative;
+  min-height: 60px;
 }
-.habit-cell:hover { transform: scale(1.3); }
-.habit-cell.done { background: linear-gradient(135deg, var(--success), var(--info)); }
-.habit-streak { text-align: center; font-weight: 700; color: var(--warning); }
+.habit-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(99,102,241,0.35);
+}
+.habit-action-btn:active { transform: translateY(0); }
+.habit-action-btn.done {
+  background: linear-gradient(135deg, var(--success), #047857);
+  box-shadow: 0 6px 20px rgba(16,185,129,0.25);
+}
+.habit-action-btn.done:hover { box-shadow: 0 10px 28px rgba(16,185,129,0.4); }
+.habit-action-btn:disabled { cursor: default; transform: none !important; opacity: 0.92; }
+.habit-action-btn.risk {
+  background: linear-gradient(135deg, var(--warning), var(--danger));
+  box-shadow: 0 6px 20px rgba(245,158,11,0.35);
+  animation: pulse-risk 2s infinite;
+}
+@keyframes pulse-risk {
+  0%, 100% { box-shadow: 0 6px 20px rgba(245,158,11,0.3); }
+  50%      { box-shadow: 0 6px 35px rgba(245,158,11,0.6); }
+}
+.habit-action-sub {
+  display: block; font-size: 12px; font-weight: 500;
+  opacity: 0.85; margin-top: 4px;
+}
+.habit-history {
+  display: flex; gap: 4px; margin-top: 14px;
+}
+.history-dot {
+  flex: 1; height: 10px;
+  background: var(--surface-2);
+  border-radius: 3px; cursor: pointer;
+  transition: all .15s; position: relative;
+}
+.history-dot.done {
+  background: linear-gradient(135deg, var(--success), var(--info));
+}
+.history-dot.today { box-shadow: 0 0 0 2px var(--primary); }
+.history-dot:hover { transform: scaleY(1.6); }
+.habit-delete {
+  position: absolute; top: 14px; left: 14px;
+  background: transparent; border: none;
+  color: var(--text-muted); cursor: pointer;
+  font-size: 14px; opacity: 0;
+  transition: opacity .15s, background .15s;
+  width: 28px; height: 28px; border-radius: 50%;
+}
+.habit-card:hover .habit-delete,
+.habit-card .habit-delete:focus { opacity: 1; }
+.habit-delete:hover { background: rgba(239,68,68,0.1); color: var(--danger); }
+@keyframes habit-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+.habit-card.just-marked { animation: habit-pop .35s ease; }
 
 /* ─── GOALS ─── */
 .goal-card {
@@ -1386,7 +1473,7 @@ select.task-priority {
           <div class="card-header">
             <div>
               <div class="card-title">הרגלים יומיים</div>
-              <div class="card-subtitle">לחץ על משבצת לסמן יום ✓ — שבור את הרצף ותראה איך הכוח מצטבר</div>
+              <div class="card-subtitle">לחץ על הכפתור פעם ביום ✓ — כל יום מעלה את הרצף. פספסת יום? הרצף מתאפס</div>
             </div>
             <button class="btn btn-primary" onclick="addHabit()">+ הרגל חדש</button>
           </div>
@@ -2218,21 +2305,42 @@ async function deleteHabit(id) {
   save(); renderHabits();
   toast('ההרגל נמחק', 'success');
 }
-function toggleHabitDay(hid, key) {
+function markHabitToday(hid) {
   const h = DB.habits.find(h => h.id === hid);
   if (!h) return;
-  if (h.log[key]) delete h.log[key];
-  else h.log[key] = true;
-  save(); renderHabits();
+  const k = todayKey();
+  if (!h.log[k]) {
+    h.log[k] = true;
+    save();
+    const card = document.querySelector(`[data-habit="${hid}"]`);
+    if (card) card.classList.add('just-marked');
+    setTimeout(() => renderHabits(), 350);
+  }
 }
 function habitStreak(h) {
+  // רצף חי: סופר ימים רצופים שמסתיימים היום או אתמול (אם פספסת יום — מתאפס)
   let s = 0;
   const d = new Date();
+  if (!h.log[dayKey(d)]) d.setDate(d.getDate() - 1);
   while (h.log[dayKey(d)]) {
     s++;
     d.setDate(d.getDate() - 1);
   }
   return s;
+}
+function bestStreak(h) {
+  const keys = Object.keys(h.log || {}).filter(k => h.log[k]).sort();
+  let best = 0, cur = 0, prev = null;
+  for (const k of keys) {
+    if (prev) {
+      const pd = new Date(prev), cd = new Date(k);
+      const diff = Math.round((cd - pd) / 86400000);
+      cur = diff === 1 ? cur + 1 : 1;
+    } else cur = 1;
+    if (cur > best) best = cur;
+    prev = k;
+  }
+  return best;
 }
 function renderHabits() {
   const list = document.getElementById('habitsList');
@@ -2240,27 +2348,43 @@ function renderHabits() {
     list.innerHTML = '<div class="empty"><div class="empty-icon">🔥</div><div>הוסף את ההרגל הראשון שלך. הצלחה זה מה שאתה עושה כל יום.</div></div>';
     return;
   }
-  const today = new Date();
+  const tk = todayKey();
   list.innerHTML = DB.habits.map(h => {
-    let cells = '';
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const k = dayKey(d);
-      const done = h.log[k];
-      const isToday = k === todayKey();
-      cells += `<div class="habit-cell ${done?'done':''}"
-                      title="${k}${done?' ✓':''}"
-                      style="${isToday?'box-shadow:0 0 0 2px var(--primary)':''}"
-                      onclick="toggleHabitDay('${h.id}','${k}')"></div>`;
+    const doneToday = !!h.log[tk];
+    const streak = habitStreak(h);
+    const atRisk = !doneToday && streak > 0;   // רצף חי מאתמול שעוד לא סומן היום
+    const best = bestStreak(h);
+    const stateClass = doneToday ? 'done-today' : (atRisk ? 'at-risk' : '');
+    const btnClass = doneToday ? 'done' : (atRisk ? 'risk' : '');
+    let btnLabel, btnSub;
+    if (doneToday) {
+      btnLabel = '✅ סומן היום!';
+      btnSub = `רצף נוכחי: ${streak} ימים 🔥`;
+    } else if (atRisk) {
+      btnLabel = '🔥 שמור על הרצף — סמן היום';
+      btnSub = `רצף נוכחי: ${streak} ימים · אל תפספס`;
+    } else {
+      btnLabel = '✓ סמן והתחל רצף';
+      btnSub = 'לחיצה אחת ביום מעלה את הרצף';
     }
     return `
-    <div class="habit-row">
-      <div class="habit-name">${h.emoji} ${escapeHtml(h.name)}
-        <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;float:left" onclick="deleteHabit('${h.id}')">✕</button>
+    <div class="habit-card ${stateClass}" data-habit="${h.id}">
+      <button class="habit-delete" onclick="deleteHabit('${h.id}')" title="מחק">✕</button>
+      <div class="habit-header">
+        <div class="habit-icon-big">${h.emoji}</div>
+        <div class="habit-info">
+          <div class="habit-title">${escapeHtml(h.name)}</div>
+          <div class="habit-meta">${best ? 'שיא: '+best+' ימים' : 'הרגל יומי'}</div>
+        </div>
+        <div class="habit-flame">
+          <div class="flame-num">${streak}</div>
+          <div class="flame-label">🔥 רצף</div>
+        </div>
       </div>
-      <div class="habit-cells">${cells}</div>
-      <div class="habit-streak">🔥 ${habitStreak(h)}</div>
+      <button class="habit-action-btn ${btnClass}" onclick="markHabitToday('${h.id}')" ${doneToday?'disabled':''}>
+        ${btnLabel}
+        <span class="habit-action-sub">${btnSub}</span>
+      </button>
     </div>`;
   }).join('');
 }
