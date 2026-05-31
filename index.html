@@ -690,6 +690,25 @@ textarea.journal-text {
   outline: none; border-color: var(--primary);
 }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; align-items: center; }
+.block-task-toggle {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  font-weight: 600; color: var(--text); user-select: none;
+}
+.block-task-toggle input[type="checkbox"] {
+  width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;
+}
+.quad-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.quad-opt {
+  padding: 11px 8px; border: 1px solid var(--border); background: var(--surface-2);
+  color: var(--text); border-radius: var(--radius-sm); cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 600; text-align: center;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.quad-opt:hover { border-color: var(--primary); }
+.quad-opt.selected {
+  border-color: var(--primary); background: var(--primary-glow);
+  box-shadow: 0 0 0 1px var(--primary);
+}
 .btn-danger {
   background: linear-gradient(135deg, var(--danger), #b91c1c);
   border: none; color: white; font-weight: 600;
@@ -1700,6 +1719,21 @@ select.task-priority {
       <div>
         <label>שעת סיום</label>
         <input type="time" id="blockEnd">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="block-task-toggle">
+        <input type="checkbox" id="blockAddTask" onchange="toggleBlockQuadPicker()">
+        <span>➕ הוסף גם לרשימת המשימות</span>
+      </label>
+      <div id="blockQuadPicker" style="display:none;margin-top:12px">
+        <label>רמת חשיבות (מטריצת אייזנהאואר)</label>
+        <div class="quad-picker">
+          <button type="button" class="quad-opt" data-bq="q1" onclick="pickBlockQuad('q1')">🔥 דחוף + חשוב</button>
+          <button type="button" class="quad-opt" data-bq="q2" onclick="pickBlockQuad('q2')">⭐ חשוב</button>
+          <button type="button" class="quad-opt" data-bq="q3" onclick="pickBlockQuad('q3')">⚡ דחוף</button>
+          <button type="button" class="quad-opt" data-bq="q4" onclick="pickBlockQuad('q4')">🗑 כל השאר</button>
+        </div>
       </div>
     </div>
     <div class="modal-actions">
@@ -2793,9 +2827,24 @@ function _resetBlockModalToCreate() {
   const m = document.getElementById('blockModal');
   m.dataset.editId = '';
   m.dataset.dayKey = todayKey();
+  m.dataset.blockQuad = 'q2';
   document.getElementById('blockModalTitle').textContent = '📅 בלוק זמן חדש';
   document.getElementById('blockSaveBtn').textContent = 'הוסף בלוק';
   document.getElementById('blockDeleteBtn').style.display = 'none';
+  document.getElementById('blockAddTask').checked = false;
+  document.getElementById('blockQuadPicker').style.display = 'none';
+  pickBlockQuad('q2');
+}
+function toggleBlockQuadPicker() {
+  const on = document.getElementById('blockAddTask').checked;
+  document.getElementById('blockQuadPicker').style.display = on ? 'block' : 'none';
+  if (on && !document.getElementById('blockModal').dataset.blockQuad) pickBlockQuad('q2');
+}
+function pickBlockQuad(q) {
+  document.getElementById('blockModal').dataset.blockQuad = q;
+  document.querySelectorAll('#blockQuadPicker .quad-opt').forEach(b => {
+    b.classList.toggle('selected', b.dataset.bq === q);
+  });
 }
 
 function editBlock(dayKeyStr, id) {
@@ -2857,7 +2906,15 @@ function saveBlock() {
     DB.timeBlocks[k].push({ id: uid(), title, start, end });
     toast('בלוק זמן נוסף 📅', 'success');
   }
+  // optionally also add the same activity as a task in the chosen quadrant
+  let addedTask = false;
+  if (document.getElementById('blockAddTask').checked) {
+    const q = document.getElementById('blockModal').dataset.blockQuad || 'q2';
+    DB.tasks.push({ id: uid(), text: title, q, done: false, tag: '⏰ ' + start, created: Date.now() });
+    addedTask = true;
+  }
   save(); closeBlockModal(); renderCalendar();
+  if (addedTask) { renderTasks(); toast('נוסף גם למשימות ✓', 'success'); }
 }
 async function removeBlock(k, id) {
   const b = (DB.timeBlocks[k]||[]).find(x => x.id === id);
