@@ -809,6 +809,14 @@ textarea.journal-text:focus { outline: none; border-color: var(--ink); }
 }
 .journal-entry:hover { background: var(--card); border-color: var(--line); }
 .journal-date { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-2); margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.entry-delete {
+  margin-right: auto; width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%;
+  display: grid; place-items: center;
+  background: transparent; border: 0; color: var(--text-3); font-size: 13px; cursor: pointer;
+  transition: background-color var(--t) var(--ease), color var(--t) var(--ease);
+}
+.entry-delete:hover { background: var(--alert-soft); color: var(--alert); }
+.entry-mood { filter: grayscale(1); opacity: .8; }
 
 /* ─── CALENDAR ─── */
 .day-schedule {
@@ -822,7 +830,7 @@ textarea.journal-text:focus { outline: none; border-color: var(--ink); }
   display: flex; flex-direction: column;
   background: var(--card); border-left: 1px solid var(--line-2);
 }
-.hour-label { height: 60px; flex-shrink: 0; padding-top: 4px; text-align: center; font-size: 11px; color: var(--text-3); }
+.hour-label { height: 60px; flex-shrink: 0; padding-top: 4px; text-align: center; font-size: 11px; color: var(--text-2); }
 .events-col { position: relative; }
 .hour-line { position: absolute; left: 0; right: 0; height: 30px; z-index: 1; cursor: pointer; transition: background-color .15s var(--ease); }
 .hour-line.full { border-top: 1px solid var(--line-2); }
@@ -838,7 +846,7 @@ textarea.journal-text:focus { outline: none; border-color: var(--ink); }
   position: absolute; z-index: 2;
   display: flex; flex-direction: column; justify-content: flex-start;
   padding: 6px 10px; overflow: hidden;
-  background: #171717; color: #FFFFFF;
+  background: var(--ink); color: var(--on-ink);
   border: 1px solid transparent; border-radius: 10px;
   font-size: 12px; cursor: pointer;
   box-shadow: var(--sh-rest);
@@ -849,18 +857,9 @@ textarea.journal-text:focus { outline: none; border-color: var(--ink); }
 .time-block .tb-time { font-size: 10.5px; opacity: .72; margin-top: 1px; }
 .time-block.compact { padding: 2px 9px; }
 .time-block.compact .tb-time { display: none; }
-.time-block.color-0 { background: #171717; color: #FFFFFF; }
-.time-block.color-1 { background: #3A3A3A; color: #FFFFFF; }
-.time-block.color-2 { background: #5E5E5E; color: #FFFFFF; }
-.time-block.color-3 { background: #FFFFFF; color: #171717; border-color: #171717; }
-.time-block.color-4 { background: #EBEBEB; color: #171717; border-color: #D3D3D3; }
-.time-block.color-5 { background: #D0D0D0; color: #171717; }
-[data-theme="dark"] .time-block.color-0 { background: #F5F5F5; color: #111111; }
-[data-theme="dark"] .time-block.color-1 { background: #C9C9C9; color: #111111; }
-[data-theme="dark"] .time-block.color-2 { background: #8E8E8E; color: #111111; }
-[data-theme="dark"] .time-block.color-3 { background: #161616; color: #F5F5F5; border-color: #F5F5F5; }
-[data-theme="dark"] .time-block.color-4 { background: #2A2A2A; color: #F5F5F5; border-color: #3A3A3A; }
-[data-theme="dark"] .time-block.color-5 { background: #474747; color: #F5F5F5; }
+/* one deliberate style for every block; a card-coloured ring keeps back-to-back blocks apart */
+.time-block { box-shadow: 0 0 0 1.5px var(--card); }
+.time-block:hover { box-shadow: 0 0 0 1.5px var(--card), var(--sh-hover); }
 
 /* explanatory copy blocks (time blocking, "don't break the chain") */
 .explain p { font-size: 15px; line-height: 1.7; color: var(--lead); margin-bottom: 14px; }
@@ -1137,9 +1136,9 @@ select.task-priority { padding: 4px 8px; border-radius: 8px; background: var(--c
   .pomodoro-wrap { padding: 30px 8px; }
   .pomo-task-input { font-size: 16px; }
   .day-schedule { max-height: 65vh; grid-template-columns: 46px 1fr; }
-  .hour-label { font-size: 10px; }
-  .time-block, .time-block .tb-title { font-size: 11px; }
-  .time-block .tb-time { font-size: 9.5px; }
+  .hour-label { font-size: 11px; }
+  .time-block, .time-block .tb-title { font-size: 12px; }
+  .time-block .tb-time { font-size: 10.5px; }
   .card { padding: 20px 16px; }
   .stat-card { padding: 18px 16px; }
   .stat-top { gap: 14px; }
@@ -1148,11 +1147,17 @@ select.task-priority { padding: 4px 8px; border-radius: 8px; background: var(--c
   .modal input:not([type="checkbox"]), .modal select, .modal textarea { font-size: 16px; }
   .modal-actions { flex-wrap: wrap; }
   .modal-actions .btn { flex: 1; min-height: 46px; }
+  .modal-actions > div:empty { display: none; }
   .btn { height: 44px; }
   .btn-icon { width: 44px; }
   .nav-item { height: 48px; }
   .mood { width: 48px; height: 48px; font-size: 22px; }
-  textarea.journal-text { font-size: 16px; }
+  .chip-btn { height: 44px; padding: 0 16px; }
+  .entry-delete { width: 44px; height: 44px; }
+  textarea.journal-text { font-size: 16px; resize: none; }
+  #view-journal .btn-primary { flex-basis: 100%; margin-top: 4px; }
+  #view-calendar .card-header { flex-wrap: wrap; }
+  #view-calendar .card-header > .btn-primary { order: 3; flex-basis: 100%; }
   .chart-bar { height: 150px; gap: 4px; }
   .bar-label { font-size: 9.5px; }
   .weekly-overview { gap: 5px; }
@@ -1847,15 +1852,15 @@ select.task-priority { padding: 4px 8px; border-radius: 8px; background: var(--c
     <div class="form-row">
       <label class="block-task-toggle">
         <input type="checkbox" id="blockAddTask" onchange="toggleBlockQuadPicker()">
-        <span>➕ הוסף גם לרשימת המשימות</span>
+        <span>הוסף גם לרשימת המשימות</span>
       </label>
       <div id="blockQuadPicker" style="display:none;margin-top:12px">
         <label>רמת חשיבות (מטריצת אייזנהאואר)</label>
         <div class="quad-picker">
-          <button type="button" class="quad-opt" data-bq="q1" onclick="pickBlockQuad('q1')">🔥 דחוף + חשוב</button>
-          <button type="button" class="quad-opt" data-bq="q2" onclick="pickBlockQuad('q2')">⭐ חשוב</button>
-          <button type="button" class="quad-opt" data-bq="q3" onclick="pickBlockQuad('q3')">⚡ דחוף</button>
-          <button type="button" class="quad-opt" data-bq="q4" onclick="pickBlockQuad('q4')">🗑 כל השאר</button>
+          <button type="button" class="quad-opt" data-bq="q1" onclick="pickBlockQuad('q1')">דחוף + חשוב</button>
+          <button type="button" class="quad-opt" data-bq="q2" onclick="pickBlockQuad('q2')">חשוב</button>
+          <button type="button" class="quad-opt" data-bq="q3" onclick="pickBlockQuad('q3')">דחוף</button>
+          <button type="button" class="quad-opt" data-bq="q4" onclick="pickBlockQuad('q4')">כל השאר</button>
         </div>
       </div>
     </div>
@@ -2635,8 +2640,8 @@ function renderJournal() {
     history.innerHTML = sorted.slice(0, 30).map(j => {
       const moodE = ['😞','😕','😐','🙂','😄'][j.mood-1] || '';
       return `<div class="journal-entry">
-        <div class="journal-date">${j.date} ${moodE}
-          <button class="btn btn-ghost" style="margin-right:auto;padding:2px 6px;font-size:11px" onclick="deleteJournal('${j.id}')">✕</button>
+        <div class="journal-date">${j.date} <span class="entry-mood">${moodE}</span>
+          <button class="entry-delete" onclick="deleteJournal('${j.id}')" aria-label="מחק רישום">✕</button>
         </div>
         <div style="white-space:pre-wrap;font-size:13px;line-height:1.6">${escapeHtml(j.text)}</div>
       </div>`;
@@ -2962,9 +2967,9 @@ function renderCalendar() {
     return `<div class="time-block ${colorClass} ${compact}"
               style="top:${top}px;height:${height}px;width:${colWidth};right:${rightOffset};left:auto"
               onclick="event.stopPropagation();editBlock('${k}','${b.id}')"
-              title="${escapeHtml(b.title)} · ${b.start}–${b.end}">
+              title="${escapeHtml(b.title)} · \u2066${b.start}–${b.end}\u2069">
       <div class="tb-title">${escapeHtml(b.title)}</div>
-      <div class="tb-time">⏱ ${b.start}–${b.end}</div>
+      <div class="tb-time"><bdi dir="ltr">${b.start}–${b.end}</bdi></div>
     </div>`;
   }).join('');
 
